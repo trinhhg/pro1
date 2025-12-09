@@ -1,28 +1,41 @@
+// === CẤU HÌNH TELEGRAM BOT ===
+const TG_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"; // Thay Token của bạn vào đây
+const TG_CHAT_ID = "YOUR_CHAT_ID_HERE";     // Thay Chat ID của bạn vào đây
+// =============================
+
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // === KV BINDING: PRO_1 ===
-  
-  // 1. API HEARTBEAT (Check status mà không cần F5)
+  // Helper gửi Telegram
+  async function sendTelegram(msg) {
+      if(!TG_BOT_TOKEN || !TG_CHAT_ID || TG_BOT_TOKEN.includes("YOUR_")) return;
+      const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
+      await fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
+      });
+  }
+
+  // 1. API HEARTBEAT
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
-      
       const keyVal = await env.PRO_1.get(userKey);
       if(!keyVal) return new Response("Invalid", {status: 401});
-      
       const d = JSON.parse(keyVal);
       if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401});
       return new Response("OK", {status: 200});
   }
 
-  // 2. XỬ LÝ LOGIN (POST)
+  // 2. LOGIN & TELEGRAM NOTI
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.formData();
         const inputKey = (formData.get("secret_key") || "").trim();
         const deviceId = (formData.get("device_id") || "unknown").trim();
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 
         if (!inputKey) return new Response(renderLoginPage("Vui lòng nhập Key!"), {headers:{"Content-Type":"text/html"}});
 
@@ -31,20 +44,18 @@ export async function onRequest(context) {
 
         let keyData = JSON.parse(keyVal);
 
-        // A. Kích hoạt
         if (!keyData.activated_at) {
             const now = Date.now();
             const dur = (keyData.duration_seconds || (30*86400)) * 1000;
             keyData.activated_at = now;
             keyData.expires_at = now + dur;
-            keyData.devices = []; // Init devices
+            keyData.devices = [];
         } 
         else if (keyData.expires_at && Date.now() > keyData.expires_at) {
              return new Response(renderLoginPage("Key đã hết hạn!"), {headers:{"Content-Type":"text/html"}});
         }
 
-        // B. Check Device Limit
-        const maxDev = keyData.max_devices || 2; // Default 2
+        const maxDev = keyData.max_devices || 2;
         let devices = keyData.devices || [];
         
         if (!devices.includes(deviceId)) {
@@ -53,11 +64,13 @@ export async function onRequest(context) {
             }
             devices.push(deviceId);
             keyData.devices = devices;
-            // Update KV
             await env.PRO_1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // Success
+        // GỬI TELEGRAM
+        const msg = `🚀 NEW LOGIN!\nKey: ${inputKey}\nIP: ${ip}\nDevice: ${deviceId}\nType: ${keyData.type||'Unknown'}`;
+        context.waitUntil(sendTelegram(msg));
+
         return new Response(null, {
             status: 302,
             headers: {
@@ -70,17 +83,10 @@ export async function onRequest(context) {
     }
   }
 
-  // 3. GET /login -> Trả về form
-  if (url.pathname === "/login") {
-      return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
-  }
+  if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
 
-  // 4. LOGOUT
-  if (url.pathname === "/logout") {
-     return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
-  }
+  if (url.pathname === "/logout") return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
 
-  // 5. ROUTING
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
@@ -94,7 +100,6 @@ export async function onRequest(context) {
       const target = isVip ? "/vip.html" : "/index.html";
       return env.ASSETS.fetch(new URL(target, request.url));
   }
-
   return next();
 }
 
@@ -105,6 +110,7 @@ function getCookie(req, name) {
     return m ? m[1] : null;
 }
 
+// Hàm render Login với Modal Mua Key tích hợp
 function renderLoginPage(errorMsg) {
   return `
 <!DOCTYPE html>
@@ -131,13 +137,34 @@ function renderLoginPage(errorMsg) {
     .extra-info { margin-top: 25px; padding-top: 20px; border-top: 1px dashed #e5e7eb; text-align: center; font-size: 13px; }
     .extra-info a { color: #2563eb; font-weight: 700; text-decoration: none; }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: 0; opacity: 1; } }
+    
+    /* MODAL STYLES EMBEDDED */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: white; width: 450px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; animation: slideIn 0.3s ease-out; }
+    .modal-close { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 20px; cursor: pointer; color: #9ca3af; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+    .price-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center; color: #374151; font-size:13px; }
+    .price-card.team { border-color: #3b82f6; background: #eff6ff; }
+    .price-title { font-weight: 800; font-size: 14px; margin-bottom: 5px; display: block; color: #111827; }
+    .buy-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    .btn-fb { background: #1877f2; color: white; width: 100%; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 13px; text-align: center; display: block; }
+    .btn-tele { background: #0088cc; color: white; width: 100%; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 13px; text-align: center; display: block; }
   </style>
   <script>
-    // Generate Device ID on Client
     window.onload = function() {
         let did = localStorage.getItem('trinh_hg_device_id');
         if(!did) { did = 'dev_'+Math.random().toString(36).substr(2); localStorage.setItem('trinh_hg_device_id', did); }
         document.getElementById('device-id-input').value = did;
+        
+        // Modal Logic
+        const modal = document.getElementById('buy-key-modal');
+        const openBtn = document.getElementById('open-modal-btn');
+        const closeBtn = document.querySelector('.modal-close');
+        
+        openBtn.onclick = function(e) { e.preventDefault(); modal.classList.add('active'); };
+        closeBtn.onclick = function() { modal.classList.remove('active'); };
+        window.onclick = function(e) { if(e.target == modal) modal.classList.remove('active'); };
     }
   </script>
 </head>
@@ -153,12 +180,38 @@ function renderLoginPage(errorMsg) {
         <input type="password" id="secret_key" name="secret_key" class="w-full-input" placeholder="Nhập Key..." required autofocus>
       </div>
       <button type="submit" class="btn btn-primary">Kích hoạt</button>
-      <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn btn-buy">Mua KEY</a>
+      <a href="#" id="open-modal-btn" class="btn btn-buy">Mua KEY</a>
     </form>
     <div class="extra-info">
       KEY VIP free phát random tại: <a href="https://t.me/trinhhg57" target="_blank">t.me/trinhhg57</a><br>
       (số lượng có hạn)
     </div>
+  </div>
+
+  <div id="buy-key-modal" class="modal-overlay">
+      <div class="modal-box">
+          <button class="modal-close">×</button>
+          <h2 style="text-align:center; margin-top:0;">Bảng Giá Key VIP</h2>
+          <div class="pricing-grid">
+              <div class="price-card">
+                  <span class="price-title">CÁ NHÂN</span>
+                  <div>15k / 1 Tuần</div>
+                  <div>40k / 1 Tháng</div>
+                  <div style="font-style:italic; font-size:11px; margin-top:5px;">Max 2 thiết bị</div>
+              </div>
+              <div class="price-card team">
+                  <span class="price-title">ĐỘI NHÓM</span>
+                  <div>30k / 1 Tuần</div>
+                  <div>80k / 1 Tháng</div>
+                  <div style="font-style:italic; font-size:11px; margin-top:5px;">Max 15 thiết bị</div>
+              </div>
+          </div>
+          <p style="text-align:center; font-size:12px; color:#666;">(Trên 15 thành viên liên hệ Admin)</p>
+          <div class="buy-actions">
+              <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn-fb">Liên hệ Facebook</a>
+              <a href="https://t.me/trinhhg57" target="_blank" class="btn-tele">Liên hệ Telegram</a>
+          </div>
+      </div>
   </div>
 </body>
 </html>
