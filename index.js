@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // KIỂM TRA QUYỀN VIP TỪ HTML
+    const isVipUser = (typeof IS_VIP !== 'undefined' && IS_VIP === true);
+
     // =========================================================================
     // 1. CONFIGURATION & STATE
     // =========================================================================
@@ -7,23 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const INPUT_STATE_KEY = 'trinh_hg_input_state_v21';
   
     // MARKERS
-    const MARK_REP_START  = '\uE000'; 
-    const MARK_REP_END    = '\uE001';
-    const MARK_CAP_START  = '\uE002'; 
-    const MARK_CAP_END    = '\uE003';
-    const MARK_BOTH_START = '\uE004'; 
-    const MARK_BOTH_END   = '\uE005';
+    const MARK_REP_START  = '\uE000'; const MARK_REP_END    = '\uE001';
+    const MARK_CAP_START  = '\uE002'; const MARK_CAP_END    = '\uE003';
+    const MARK_BOTH_START = '\uE004'; const MARK_BOTH_END   = '\uE005';
   
     const defaultState = {
       currentMode: 'default',
       activeTab: 'settings',
       modes: {
         default: { 
-            pairs: [], 
-            matchCase: false, 
-            wholeWord: false, 
-            autoCaps: false, 
-            exceptions: 'jpg, png, com, vn, net'
+            pairs: [], matchCase: false, wholeWord: false, autoCaps: false, exceptions: 'jpg, png, com, vn, net'
         }
       }
     };
@@ -48,12 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
       matchCaseBtn: document.getElementById('match-case'),
       wholeWordBtn: document.getElementById('whole-word'),
       autoCapsBtn: document.getElementById('auto-caps'), 
+      
+      // Mode Actions (Có thể bị khóa)
+      addModeBtn: document.getElementById('add-mode'),
+      copyModeBtn: document.getElementById('copy-mode'),
       renameBtn: document.getElementById('rename-mode'),
       deleteBtn: document.getElementById('delete-mode'),
+      
       emptyState: document.getElementById('empty-state'),
       capsExceptionInput: document.getElementById('caps-exception'),
       saveExceptionBtn: document.getElementById('save-exception-btn'),
       
+      importBtn: document.getElementById('import-settings'),
+      exportBtn: document.getElementById('export-settings'),
+
       inputText: document.getElementById('input-text'),
       outputText: document.getElementById('output-text'),
       replaceBtn: document.getElementById('replace-button'),
@@ -106,26 +110,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function countWords(str) { return str.trim() ? str.trim().split(/\s+/).length : 0; }
 
     // =========================================================================
-    // 4. CORE: FIND & REPLACE (2 PHASES)
+    // 4. CORE: FIND & REPLACE (FREE vs VIP LOGIC)
     // =========================================================================
     
     function performReplaceAll() {
-        const rawText = els.inputText.value;
+        let rawText = els.inputText.value;
         if (!rawText) return showNotification("Chưa có nội dung!", "error");
+
+        // --- [VIP CHECK] LIMIT WORDS ---
+        const wordCount = countWords(rawText);
+        if (!isVipUser && wordCount > 2000) {
+             alert(`⚠️ BẢN FREE GIỚI HẠN 2,000 TỪ!\nBạn đang dùng ${wordCount} từ.\nHệ thống sẽ cắt bớt phần thừa.`);
+             const words = rawText.trim().split(/\s+/);
+             rawText = words.slice(0, 2000).join(" ");
+             els.inputText.value = rawText; 
+        }
 
         try {
             const mode = state.modes[state.currentMode];
             let processedText = normalizeText(rawText);
-            
-            // Clean Spacing
             processedText = processedText.replace(/\n\s*\n\s*\n+/g, '\n').split(/\r?\n/).filter(line => line.trim() !== '').join('\n\n');
 
             let countReplace = 0;
             let countCaps = 0;
+            
+            // --- [VIP CHECK] LIMIT PAIRS ---
+            let pairsToUse = mode.pairs || [];
+            if (!isVipUser && pairsToUse.length > 10) {
+                showNotification("Free: Chỉ dùng 10 cặp thay thế đầu!", "warning");
+                pairsToUse = pairsToUse.slice(0, 10);
+            }
 
             // --- BƯỚC 1: REPLACE ---
-            if (mode.pairs && mode.pairs.length > 0) {
-                const rules = mode.pairs
+            if (pairsToUse.length > 0) {
+                const rules = pairsToUse
                     .filter(p => p.find && p.find.trim())
                     .map(p => ({ find: normalizeText(p.find), replace: normalizeText(p.replace || '') }))
                     .sort((a,b) => b.find.length - a.find.length);
@@ -136,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const regex = mode.wholeWord ? new RegExp(`(?<![\\p{L}\\p{N}_])${pattern}(?![\\p{L}\\p{N}_])`, flags + 'u') : new RegExp(pattern, flags);
                     
                     processedText = processedText.replace(regex, (match) => {
-                        countReplace++; // Đếm Replace
+                        countReplace++; 
                         let replacement = rule.replace;
                         if (!mode.matchCase) replacement = preserveCase(match, replacement);
                         return `${MARK_REP_START}${replacement}${MARK_REP_END}`;
@@ -147,41 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- BƯỚC 2: AUTO CAPS ---
             if (mode.autoCaps) {
                 const exceptionList = (mode.exceptions || "").split(',').map(s => s.trim().toLowerCase()).filter(s => s);
-                
-                // Logic Regex:
-                // 1. Dòng đầu tiên (^).
-                // 2. Dấu kết câu (.?!) theo sau là dấu cách (\s+).
-                // Capture Group:
-                // Gr1: Prefix (Dấu câu + Space) hoặc Start line
-                // Nội dung sau đó có thể là:
-                //    - Marker Vàng + Text + Marker End
-                //    - Hoặc Text thường
-                
                 const autoCapsRegex = /(^|[.?!]\s+)(?:(\uE000)(.*?)(\uE001)|([^\s\uE000\uE001]+))/gmu;
 
                 processedText = processedText.replace(autoCapsRegex, (match, prefix, mStart, mContent, mEnd, rawWord) => {
                     let targetWord = mContent || rawWord;
                     if (!targetWord) return match;
-                    
-                    // Check ngoại lệ (file.jpg, etc.)
                     if (exceptionList.includes(targetWord.toLowerCase())) return match;
-                    
-                    // Viết hoa chữ đầu
                     let cappedWord = targetWord.charAt(0).toUpperCase() + targetWord.slice(1);
-                    
-                    // Nếu từ gốc đã viết hoa rồi thì thôi, trừ khi nó nằm trong Replace
-                    // Nếu là Replace (mStart tồn tại), ta chắc chắn đổi màu, kể cả nó đã viết hoa sẵn hay chưa (do user replace thành chữ thường chẳng hạn)
-                    
-                    if (mStart) {
-                        // Vừa Replace, Vừa Caps -> Màu Cam (Both)
-                        // Đã đếm replace ở trên, giờ đếm thêm Caps
-                        countCaps++;
-                        return `${prefix}${MARK_BOTH_START}${cappedWord}${MARK_BOTH_END}`;
-                    } else {
-                        // Chỉ Caps -> Màu Xanh
-                        if (rawWord.charAt(0) === rawWord.charAt(0).toUpperCase()) return match; // Đã hoa rồi thì bỏ qua
-                        countCaps++;
-                        return `${prefix}${MARK_CAP_START}${cappedWord}${MARK_CAP_END}`;
+                    if (mStart) { countCaps++; return `${prefix}${MARK_BOTH_START}${cappedWord}${MARK_BOTH_END}`; } 
+                    else {
+                        if (rawWord.charAt(0) === rawWord.charAt(0).toUpperCase()) return match; 
+                        countCaps++; return `${prefix}${MARK_CAP_START}${cappedWord}${MARK_CAP_END}`;
                     }
                 });
             }
@@ -198,19 +192,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             finalHTML += escapeHTML(buffer);
 
-            // Update UI
             els.outputText.innerHTML = finalHTML;
             els.replaceCountBadge.textContent = `Replace: ${countReplace}`;
             els.capsCountBadge.textContent = `Auto-Caps: ${countCaps}`;
             updateCounters();
-            
             els.inputText.value = ''; saveTempInput();
             showNotification("Hoàn tất xử lý!");
         } catch (e) { console.error(e); showNotification("Lỗi: " + e.message, "error"); }
     }
 
     // =========================================================================
-    // 5. SPLITTER
+    // 5. SPLITTER (FREE vs VIP LOGIC)
     // =========================================================================
     
     function renderSplitPlaceholders(count) {
@@ -230,7 +222,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function performSplit() {
         const text = els.splitInput.value;
         if(!text.trim()) return showNotification('Chưa có nội dung!', 'error');
+
+        // --- [VIP CHECK] SPLIT LIMIT ---
+        if (!isVipUser && countWords(text) > 10000) return showNotification("Free: Chỉ chia tối đa 10,000 từ!", "error");
+
         const splitType = document.querySelector('input[name="split-type"]:checked').value;
+
+        // --- [VIP CHECK] REGEX MODE ---
+        if (splitType === 'regex' && !isVipUser) return showNotification("Tính năng REGEX chỉ dành cho VIP!", "error");
 
         if (splitType === 'regex') {
             const regexStr = els.splitRegexInput.value;
@@ -252,7 +251,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification(`Đã tìm thấy ${parts.length} chương!`);
             } catch (e) { return showNotification("Regex không hợp lệ!", "error"); }
         } else {
-            // Count Mode Logic
+            // COUNT MODE
+            // --- [VIP CHECK] MAX PARTS ---
+            if (!isVipUser && currentSplitMode > 3) {
+                 showNotification("Free: Chỉ chia được tối đa 3 phần!", "error");
+                 currentSplitMode = 3;
+                 renderSplitPlaceholders(3);
+                 // Reset Active Button
+                 document.querySelectorAll('.split-mode-btn').forEach(b => b.classList.remove('active'));
+                 document.querySelector('.split-mode-btn[data-split="3"]').classList.add('active');
+            }
+
             const lines = normalizeText(text).split('\n');
             let chapterHeader = '', contentBody = normalizeText(text);
             if (/^(Chương|Chapter|Hồi)\s+\d+/.test(lines[0].trim())) { chapterHeader = lines[0].trim(); contentBody = lines.slice(1).join('\n'); }
@@ -355,8 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const items = Array.from(els.list.children);
       const newPairs = items.map(item => ({ find: item.querySelector('.find').value, replace: item.querySelector('.replace').value })).filter(p => p.find !== '');
       state.modes[state.currentMode].pairs = newPairs;
-      // Note: Exceptions được lưu riêng qua nút hoặc khi đổi mode, nhưng lưu ở đây cũng an toàn
-      // state.modes[state.currentMode].exceptions = els.capsExceptionInput.value; 
       saveState(); if (!silent) showNotification('Đã lưu cài đặt!', 'success');
     }
     
@@ -371,6 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } result.push(cell.trim()); return result;
     }
     function importCSV(file) {
+        if (!isVipUser) return showNotification("Tính năng IMPORT chỉ dành cho VIP!", "error");
+        
         const reader = new FileReader();
         reader.onload = (e) => {
             const text = e.target.result; const lines = text.split(/\r?\n/);
@@ -391,6 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }; reader.readAsText(file);
     }
     function exportCSV() {
+        if (!isVipUser) return showNotification("Tính năng EXPORT chỉ dành cho VIP!", "error");
+        
         saveCurrentPairsToState(true);
         let csvContent = "\uFEFFfind,replace,mode\n"; 
         Object.keys(state.modes).forEach(modeName => {
@@ -426,33 +437,31 @@ document.addEventListener('DOMContentLoaded', () => {
       els.wholeWordBtn.onclick = () => toggleHandler('wholeWord');
       els.autoCapsBtn.onclick = () => toggleHandler('autoCaps');
       
-      // FIX ISSUE 6: Mode Switch
-      els.modeSelect.onchange = (e) => { 
-          state.currentMode = e.target.value; 
-          saveState(); 
-          loadSettingsToUI(); // Load lại list ngay lập tức
-      };
+      els.modeSelect.onchange = (e) => { state.currentMode = e.target.value; saveState(); loadSettingsToUI(); };
       
-      // FIX ISSUE 7: Save Exception Button
       els.saveExceptionBtn.onclick = () => {
           state.modes[state.currentMode].exceptions = els.capsExceptionInput.value;
-          saveState();
-          showNotification('Đã lưu ngoại lệ!');
+          saveState(); showNotification('Đã lưu ngoại lệ!');
       };
 
-      document.getElementById('add-mode').onclick = () => { 
+      // --- [VIP CHECK] MODE ACTIONS ---
+      els.addModeBtn.onclick = () => { 
+          if (!isVipUser) return showNotification("Free: Không thể thêm Mode!", "error");
           const n = prompt('Tên Mode mới:'); 
           if(n && !state.modes[n]) { state.modes[n] = JSON.parse(JSON.stringify(defaultState.modes.default)); state.currentMode = n; saveState(); renderModeSelect(); loadSettingsToUI(); }
       };
-      document.getElementById('copy-mode').onclick = () => {
+      els.copyModeBtn.onclick = () => {
+        if (!isVipUser) return showNotification("Free: Không thể sao chép Mode!", "error");
         const n = prompt('Tên Mode bản sao:'); 
         if(n && !state.modes[n]) { state.modes[n] = JSON.parse(JSON.stringify(state.modes[state.currentMode])); state.currentMode = n; saveState(); renderModeSelect(); loadSettingsToUI(); }
       };
       els.renameBtn.onclick = () => { 
+          if (!isVipUser) return showNotification("Free: Không thể đổi tên Mode!", "error");
           const n = prompt('Tên mới:', state.currentMode); 
           if(n && n !== state.currentMode && !state.modes[n]) { state.modes[n] = state.modes[state.currentMode]; delete state.modes[state.currentMode]; state.currentMode = n; saveState(); renderModeSelect(); }
       };
       els.deleteBtn.onclick = () => { 
+          if (!isVipUser && state.currentMode !== 'default') return showNotification("Chỉ VIP mới quản lý được Mode!", "error");
           if(confirm('Xóa chế độ này?')) { 
               delete state.modes[state.currentMode]; 
               const keys = Object.keys(state.modes);
@@ -460,35 +469,44 @@ document.addEventListener('DOMContentLoaded', () => {
               saveState(); renderModeSelect(); loadSettingsToUI(); 
           }
       };
+
       document.getElementById('add-pair').onclick = () => addPairToUI();
       document.getElementById('save-settings').onclick = () => saveCurrentPairsToState();
-      document.getElementById('export-settings').onclick = exportCSV;
-      document.getElementById('import-settings').onclick = () => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.csv'; inp.onchange = e => { if(e.target.files.length) importCSV(e.target.files[0]) }; inp.click(); };
+      
+      els.exportBtn.onclick = exportCSV;
+      els.importBtn.onclick = () => { 
+          if(!isVipUser) return showNotification("Chỉ VIP mới được Import!", "error");
+          const inp = document.createElement('input'); inp.type='file'; inp.accept='.csv'; 
+          inp.onchange = e => { if(e.target.files.length) importCSV(e.target.files[0]) }; inp.click(); 
+      };
+      
       els.replaceBtn.onclick = performReplaceAll;
       document.getElementById('copy-button').onclick = () => { if(els.outputText.innerText) { navigator.clipboard.writeText(els.outputText.innerText).then(() => { showNotification('Đã sao chép văn bản!'); }); }};
 
       // SPLIT EVENTS
       els.splitTypeRadios.forEach(radio => {
           radio.addEventListener('change', (e) => {
+              if (e.target.value === 'regex' && !isVipUser) {
+                  showNotification("Chỉ VIP mới dùng Regex!", "error");
+                  els.splitTypeRadios[0].checked = true; // Quay về count
+                  return;
+              }
               const val = e.target.value;
               els.splitControlCount.classList.toggle('hidden', val !== 'count');
               els.splitControlRegex.classList.toggle('hidden', val !== 'regex');
               if(val === 'count') renderSplitPlaceholders(currentSplitMode);
-              else els.splitWrapper.innerHTML = ''; // Regex mode starts empty
+              else els.splitWrapper.innerHTML = '';
           });
       });
       document.querySelectorAll('.split-mode-btn').forEach(btn => btn.onclick = () => { 
+          const val = parseInt(btn.dataset.split);
+          if (!isVipUser && val > 3) return showNotification("Free chỉ chia tối đa 3 phần!", "error");
           document.querySelectorAll('.split-mode-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); 
-          currentSplitMode = parseInt(btn.dataset.split); 
+          currentSplitMode = val; 
           renderSplitPlaceholders(currentSplitMode);
       });
       els.splitActionBtn.onclick = performSplit;
-      
-      // Clear Regex Button
-      els.clearSplitRegexBtn.onclick = () => {
-          els.splitWrapper.innerHTML = '';
-          showNotification('Đã xóa kết quả chia!');
-      };
+      els.clearSplitRegexBtn.onclick = () => { els.splitWrapper.innerHTML = ''; showNotification('Đã xóa kết quả chia!'); };
       
       [els.inputText, els.splitInput].forEach(el => el.addEventListener('input', () => { updateCounters(); debounceSave(); }));
     }
