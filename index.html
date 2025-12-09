@@ -2,14 +2,21 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tiện Ích Trịnh Hg - FREE</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
-  <script>const IS_VIP = false;</script>
+  <script>window.IS_VIP = false;</script>
 </head>
 <body>
   <header class="app-header">
-    <div class="header-left"><h1>Tiện Ích Của Trịnh Hg</h1></div>
+    <div class="header-left">
+      <h1>Tiện Ích Của Trịnh Hg</h1>
+      <div class="donate-info">
+        <span class="donate-label">DON@TE:</span>
+        <span class="donate-details">MB BANK - TRINH THI XUAN HUONG - 0917678211</span>
+      </div>
+    </div>
     <div class="header-center">
       <nav class="tabs">
         <button class="tab-button active" data-tab="settings">Cài Đặt</button>
@@ -62,7 +69,6 @@
              <button id="delete-mode" class="btn btn-modern btn-modern-danger">Xóa</button>
           </div>
         </div>
-
         <div class="toolbar">
           <div class="toolbar-group">
             <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
@@ -81,8 +87,8 @@
             </div>
         </div>
         <div class="list-actions">
-           <button id="add-pair" class="btn btn-modern btn-modern-primary icon-btn">Thêm cặp mới</button>
-           <button id="save-settings" class="btn btn-modern btn-modern-primary icon-btn">Lưu tất cả</button>
+           <button id="add-pair" class="btn btn-action-green icon-btn">Thêm cặp mới</button>
+           <button id="save-settings" class="btn btn-action-blue icon-btn">Lưu tất cả</button>
         </div>
         <div class="scroll-area"><div id="punctuation-list"></div><div id="empty-state" class="hidden">Chưa có cặp thay thế nào.</div></div>
       </div>
