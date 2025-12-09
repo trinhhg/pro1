@@ -1,10 +1,8 @@
 /* === RESET & BASE === */
 * { box-sizing: border-box; outline: none; }
 body {
-  font-family: 'Montserrat', sans-serif;
-  margin: 0; min-height: 100vh;
-  display: flex; flex-direction: column;
-  background-color: #f3f4f6; color: #374151;
+  font-family: 'Montserrat', sans-serif; margin: 0; min-height: 100vh;
+  display: flex; flex-direction: column; background-color: #f3f4f6; color: #374151;
 }
 
 /* FONT INPUT */
@@ -64,43 +62,50 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 }
 .btn:active { transform: scale(0.98); }
 
-/* Basic Colors */
+/* Standard Colors */
 .btn-primary { background: #2563eb; color: white; }
 .btn-primary:hover { background: #1d4ed8; }
-.btn-success { background: #10b981; color: white; } /* For Copy */
+.btn-success { background: #10b981; color: white; }
 .btn-success:hover { background: #059669; }
 .btn-warning { background: #f59e0b; color: white; }
 .btn-warning:hover { background: #d97706; }
 
 /* Modern Flat Buttons (Settings Tab) */
 .btn-modern { border: 1px solid transparent; padding: 8px 15px; justify-content: center; }
-.btn-modern-primary { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; } /* Add New */
+.btn-modern-primary { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 .btn-modern-primary:hover { background: #dbeafe; }
-.btn-modern-secondary { background: #f3f4f6; color: #374151; border-color: #e5e7eb; } /* Copy */
+.btn-modern-secondary { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
 .btn-modern-secondary:hover { background: #e5e7eb; }
-.btn-modern-warning { background: #fffbeb; color: #b45309; border-color: #fde68a; } /* Rename */
+.btn-modern-warning { background: #fffbeb; color: #b45309; border-color: #fde68a; }
 .btn-modern-warning:hover { background: #fef3c7; }
-.btn-modern-danger { background: #fef2f2; color: #b91c1c; border-color: #fecaca; } /* Delete */
+.btn-modern-danger { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
 .btn-modern-danger:hover { background: #fee2e2; }
-.btn-modern-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; } /* CSV */
+.btn-modern-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
 .btn-modern-purple:hover { background: #e9d5ff; }
 
-/* Distinct Action Buttons (Request #5) */
-.btn-action-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; } /* Thêm cặp */
+/* Action Buttons Colors */
+.btn-action-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .btn-action-green:hover { background: #a7f3d0; }
-.btn-action-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; } /* Lưu tất cả */
+.btn-action-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
 .btn-action-blue:hover { background: #bfdbfe; }
 
-/* Toggle Button */
-.btn-toggle { background: #e5e7eb; color: #6b7280; justify-content: flex-start; min-width: 140px; }
-.btn-toggle.active { background: #2563eb; color: white; border: 1px solid #1d4ed8; }
+/* TOGGLE BUTTON - OLD STYLE RESTORED */
+.btn-toggle {
+    background: #e5e7eb; color: #6b7280; 
+    justify-content: flex-start; min-width: 140px;
+    border: 1px solid #d1d5db; /* Viền nhẹ */
+}
+.btn-toggle.active {
+    background: #2563eb; color: white; /* Xanh đậm chữ trắng */
+    border-color: #1d4ed8;
+}
 
 .hidden { display: none !important; }
 .full-width { width: 100%; }
 .icon-btn { min-width: 120px; }
 .input-with-btn { display: flex; gap: 5px; align-items: center; width: 100%; }
 
-/* BADGES & COUNTERS */
+/* BADGES */
 .badge { background: #1abc9c; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
 .badge-yellow { background: #f59e0b; color: white; }
 .badge-blue { background: #3b82f6; color: white; }
@@ -140,7 +145,7 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .output-div:empty::before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; }
 .pane-footer { padding: 10px; border-top: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; }
 
-/* HIGHLIGHT STYLES */
+/* HIGHLIGHTS */
 mark.hl-yellow { background-color: #fde047; color: #000; border-radius: 2px; padding: 0 1px; border-bottom: 2px solid #eab308; display: inline; }
 mark.hl-blue { background-color: #93c5fd; color: #000; border-radius: 2px; padding: 0 1px; border-bottom: 2px solid #3b82f6; display: inline; }
 mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; padding: 0 1px; border-bottom: 2px solid #f97316; display: inline; }
@@ -164,7 +169,7 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 @media (max-width: 1200px) { .split-grid-container { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .split-grid-container { grid-template-columns: 1fr; } }
 
-/* === NOTIFICATION === */
+/* === NOTIFICATIONS === */
 #notification-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
 .notification { padding: 12px 20px; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; box-shadow: 0 4px 8px rgba(0,0,0,0.15); animation: slideIn 0.3s ease-out; }
 .notification.success { background: #10b981; border-left: 4px solid #047857; }
@@ -179,18 +184,10 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .vip-badge-info { font-size: 12px; font-weight: 700; color: #059669; background: #d1fae5; padding: 5px 10px; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
 .logout-btn { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: none; }
 
-/* === MODAL STYLES (Dùng chung cho cả Index và Middleware) === */
-.modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 2000;
-    display: none; justify-content: center; align-items: center;
-}
+/* === MODAL === */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
 .modal-overlay.active { display: flex; }
-.modal-box {
-    background: white; width: 500px; padding: 25px; border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;
-    animation: slideInUp 0.3s ease-out; font-family: 'Montserrat', sans-serif;
-}
+.modal-box { background: white; width: 500px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; animation: slideInUp 0.3s ease-out; font-family: 'Montserrat', sans-serif; }
 @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: 0; opacity: 1; } }
 .modal-close { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 20px; cursor: pointer; color: #9ca3af; }
 .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
