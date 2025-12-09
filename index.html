@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tiện Ích Của Trịnh Hg - V21 (Final Logic Fix)</title>
+  <title>Tiện Ích - FREE VERSION</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
+  <script>const IS_VIP = false;</script>
 </head>
 <body>
   
@@ -24,7 +25,12 @@
         <button class="tab-button" data-tab="split">Chia Chương</button>
       </nav>
     </div>
-    <div class="header-right"></div>
+    <div class="header-right">
+       <form action="/login" method="POST" class="login-area">
+          <input type="password" name="secret_key" class="login-input" placeholder="Nhập Key VIP..." required>
+          <button type="submit" class="btn btn-primary btn-sm">Kích hoạt</button>
+       </form>
+    </div>
   </header>
 
   <main class="app-body">
@@ -39,10 +45,10 @@
                 <label>Chế độ:</label>
                 <select id="mode-select"></select>
              </div>
-             <button id="add-mode" class="btn btn-primary">+ Mới</button>
-             <button id="copy-mode" class="btn btn-secondary">Sao Chép</button>
-             <button id="rename-mode" class="btn btn-warning">Đổi Tên</button>
-             <button id="delete-mode" class="btn btn-danger">Xóa</button>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="add-mode" class="btn btn-primary locked-feature">+ Mới</button></div>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="copy-mode" class="btn btn-secondary locked-feature">Sao Chép</button></div>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="rename-mode" class="btn btn-warning locked-feature">Đổi Tên</button></div>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="delete-mode" class="btn btn-danger locked-feature">Xóa</button></div>
           </div>
         </div>
 
@@ -53,16 +59,16 @@
             <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
           </div>
           <div class="toolbar-group">
-            <button id="import-settings" class="btn btn-toggle purple">Nhập CSV (3 cột)</button>
-            <button id="export-settings" class="btn btn-toggle purple">Xuất CSV (3 cột)</button>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="import-settings" class="btn btn-toggle purple locked-feature">Nhập CSV</button></div>
+             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="export-settings" class="btn btn-toggle purple locked-feature">Xuất CSV</button></div>
           </div>
         </div>
 
         <div class="advanced-settings">
             <div class="setting-block">
-                <label>Ngoại lệ Auto Caps (ngăn cách bằng dấu phẩy):</label>
+                <label>Ngoại lệ Auto Caps:</label>
                 <div class="input-with-btn">
-                    <input type="text" id="caps-exception" placeholder="Ví dụ: jpg, png, com, vn (Những từ này sẽ không bị viết hoa sau dấu chấm)">
+                    <input type="text" id="caps-exception" placeholder="Ví dụ: jpg, png...">
                     <button id="save-exception-btn" class="btn btn-primary btn-sm">Lưu</button>
                 </div>
             </div>
@@ -84,7 +90,7 @@
       <div class="split-pane">
         <div class="pane input-pane">
           <div class="pane-header">
-            <span>Văn bản gốc</span>
+            <span>Văn bản gốc (Max 2000 từ)</span>
             <span id="input-word-count" class="badge">Words: 0</span>
           </div>
           <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
@@ -102,9 +108,9 @@
                 <span id="output-word-count" class="badge">Words: 0</span>
             </div>
           </div>
-          <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="Kết quả sẽ hiện ra ở đây..."></div>
+          <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="..."></div>
           <div class="pane-footer">
-            <button id="copy-button" class="btn btn-success full-width">Sao chép văn bản (Text Only)</button>
+            <button id="copy-button" class="btn btn-success full-width">Sao chép văn bản</button>
           </div>
         </div>
       </div>
@@ -114,37 +120,27 @@
       <div class="split-controls-wrapper">
         <div class="split-mode-selector">
             <label><input type="radio" name="split-type" value="count" checked> Chia theo số phần</label>
-            <label><input type="radio" name="split-type" value="regex"> Chia theo Chương (Regex)</label>
+            <div class="locked-wrapper"><div class="locked-overlay">VIP</div><label class="locked-feature"><input type="radio" name="split-type" value="regex" disabled> Chia theo Chương (Regex)</label></div>
         </div>
 
         <div id="split-type-count" class="split-sub-controls">
-            <label>Số phần:</label>
+            <label>Số phần (Max 3):</label>
             <div class="split-buttons-group">
             <button class="split-mode-btn active" data-split="2">2</button>
             <button class="split-mode-btn" data-split="3">3</button>
-            <button class="split-mode-btn" data-split="4">4</button>
-            <button class="split-mode-btn" data-split="5">5</button>
-            <button class="split-mode-btn" data-split="6">6</button>
-            <button class="split-mode-btn" data-split="7">7</button>
-            <button class="split-mode-btn" data-split="8">8</button>
-            <button class="split-mode-btn" data-split="9">9</button>
-            <button class="split-mode-btn" data-split="10">10</button>
+            <div class="locked-wrapper"><button class="split-mode-btn locked-feature" data-split="4">4</button></div>
+            <div class="locked-wrapper"><button class="split-mode-btn locked-feature" data-split="5">5</button></div>
             </div>
         </div>
 
         <div id="split-type-regex" class="split-sub-controls hidden">
-            <label>Regex nhận diện:</label>
-            <div class="input-with-btn">
-                <input type="text" id="split-regex-input" value="" placeholder="Ví dụ: ^(Chương|Chapter|Hồi)\s+\d+[:.]?">
-                <button id="clear-split-regex" class="btn btn-danger btn-sm">Xóa kết quả</button>
-            </div>
-        </div>
+             </div>
       </div>
 
       <div class="split-grid-container">
         <div id="split-input-container" class="split-box input-box">
           <div class="split-header">
-            <span>Văn bản gốc</span>
+            <span>Văn bản gốc (Max 10k từ)</span>
             <span id="split-input-word-count" class="badge">Words: 0</span>
           </div>
           <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán cả bộ truyện vào đây..."></textarea>
