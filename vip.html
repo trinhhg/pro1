@@ -1,1 +1,116 @@
-j
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tiện Ích Trịnh Hg - VIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <script>window.IS_VIP = true;</script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <h1>Tiện Ích Của Trịnh Hg (VIP)</h1>
+      <div class="donate-info"><span class="donate-label">VIP ACCESS</span><span class="donate-details">CẢM ƠN BẠN ĐÃ ỦNG HỘ!</span></div>
+    </div>
+    <div class="header-center">
+      <nav class="tabs">
+        <button class="tab-button active" data-tab="settings">Cài Đặt</button>
+        <button class="tab-button" data-tab="replace">Thay Thế</button>
+        <button class="tab-button" data-tab="split">Chia Chương</button>
+      </nav>
+    </div>
+    <div class="header-right">
+       <div class="vip-badge-info"><span>👑 VIP MEMBER</span><a href="/logout" class="logout-btn">Đăng xuất</a></div>
+    </div>
+  </header>
+
+  <main class="app-body">
+    <div id="settings" class="tab-content active">
+      <div class="panel-container">
+        <div class="panel-header">
+          <h2>Quản Lý Cặp Thay Thế</h2>
+          <div class="mode-actions">
+             <div class="select-wrapper"><label>Chế độ:</label><select id="mode-select"></select></div>
+             <button id="add-mode" class="btn btn-modern btn-modern-primary">+ Mới</button>
+             <button id="copy-mode" class="btn btn-modern btn-modern-secondary">Sao Chép</button>
+             <button id="rename-mode" class="btn btn-modern btn-modern-warning">Đổi Tên</button>
+             <button id="delete-mode" class="btn btn-modern btn-modern-danger">Xóa</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
+            <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
+            <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
+          </div>
+          <div class="toolbar-group">
+            <button id="import-settings" class="btn btn-modern btn-modern-purple">Nhập CSV</button>
+            <button id="export-settings" class="btn btn-modern btn-modern-purple">Xuất CSV</button>
+          </div>
+        </div>
+        <div class="advanced-settings">
+            <div class="setting-block"><label>Ngoại lệ Auto Caps:</label><div class="input-with-btn"><input type="text" id="caps-exception"><button id="save-exception-btn" class="btn btn-modern btn-modern-primary">Lưu</button></div></div>
+        </div>
+        <div class="list-actions">
+           <button id="add-pair" class="btn btn-action-green icon-btn">Thêm cặp mới</button>
+           <button id="save-settings" class="btn btn-action-blue icon-btn">Lưu tất cả</button>
+        </div>
+        <div class="scroll-area"><div id="punctuation-list"></div><div id="empty-state" class="hidden">Chưa có cặp thay thế nào.</div></div>
+      </div>
+    </div>
+
+    <div id="replace" class="tab-content">
+      <div class="split-pane">
+        <div class="pane input-pane">
+          <div class="pane-header"><span>Văn bản gốc <span class="limit-label vip">(Không giới hạn)</span></span><span id="input-word-count" class="badge">Words: 0</span></div>
+          <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
+          <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
+        </div>
+        <div class="pane output-pane">
+          <div class="pane-header"><span>Kết quả</span><div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div></div>
+          <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="..."></div>
+          <div class="pane-footer"><button id="copy-button" class="btn btn-success full-width">Sao chép văn bản</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="split" class="tab-content">
+      <div class="split-controls-wrapper">
+        <div class="split-mode-selector">
+            <label><input type="radio" name="split-type" value="count" checked> Chia theo số phần</label>
+            <label><input type="radio" name="split-type" value="regex"> Chia theo Chương (Regex)</label>
+        </div>
+        <div id="split-type-count" class="split-sub-controls">
+            <label>Số phần:</label>
+            <div class="split-buttons-group">
+                <button class="split-mode-btn active" data-split="2">2</button>
+                <button class="split-mode-btn" data-split="3">3</button>
+                <button class="split-mode-btn" data-split="4">4</button>
+                <button class="split-mode-btn" data-split="5">5</button>
+                <button class="split-mode-btn" data-split="6">6</button>
+                <button class="split-mode-btn" data-split="7">7</button>
+                <button class="split-mode-btn" data-split="8">8</button>
+                <button class="split-mode-btn" data-split="9">9</button>
+                <button class="split-mode-btn" data-split="10">10</button>
+            </div>
+        </div>
+        <div id="split-type-regex" class="split-sub-controls hidden">
+            <label>Regex nhận diện:</label>
+            <div class="input-with-btn"><input type="text" id="split-regex-input" value="^(Chương|Chapter|Hồi|Quyển)\s+(?:[\d]+|[IVXLCDM]+|[a-zA-Zà-ỹ]+)"><button id="clear-split-regex" class="btn btn-modern btn-modern-danger btn-sm">Xóa kết quả</button></div>
+        </div>
+      </div>
+      <div class="split-grid-container">
+        <div id="split-input-container" class="split-box input-box">
+          <div class="split-header"><span>Văn bản gốc <span class="limit-label vip">(Không giới hạn)</span></span><span id="split-input-word-count" class="badge">Words: 0</span></div>
+          <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán cả bộ truyện vào đây..."></textarea>
+          <div class="split-footer"><button id="split-action-btn" class="btn btn-primary full-width">Thực Hiện Chia</button></div>
+        </div>
+        <div id="split-outputs-wrapper" class="outputs-wrapper"></div>
+      </div>
+    </div>
+  </main>
+  <div id="notification-container"></div>
+  <script src="index.js"></script>
+</body>
+</html>
