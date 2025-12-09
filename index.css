@@ -22,10 +22,23 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
   display: flex; justify-content: space-between; align-items: center;
   flex-shrink: 0; z-index: 100; position: sticky; top: 0;
 }
-.header-left { flex: 1; }
+.header-left { flex: 1.5; }
 .header-center { flex: 2; display: flex; justify-content: center; height: 100%; }
 .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
-.header-left h1 { margin: 0; font-size: 16px; color: #111827; font-weight: 700; }
+.header-left h1 { margin: 0; font-size: 16px; color: #111827; font-weight: 700; margin-bottom: 4px; }
+
+/* DONATE STYLES */
+.donate-info { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+.donate-label {
+    background: #dc2626; color: white; padding: 2px 6px; border-radius: 4px;
+    font-weight: 800; font-size: 10px; animation: pulse-red 2s infinite;
+}
+.donate-details { color: #b91c1c; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; }
+@keyframes pulse-red {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
 
 /* === TABS === */
 .tabs { display: flex; gap: 5px; height: 100%; align-items: flex-end; }
@@ -43,7 +56,7 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .tab-content { display: none; width: 100%; flex-direction: column; }
 .tab-content.active { display: flex; }
 
-/* === BUTTONS (MODERN FLAT STYLE) === */
+/* === BUTTONS === */
 .btn {
   padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;
   font-size: 12px; font-weight: 600; transition: all 0.2s;
@@ -51,37 +64,36 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 }
 .btn:active { transform: scale(0.98); }
 
-/* Style nút cơ bản */
+/* Basic Colors */
 .btn-primary { background: #2563eb; color: white; }
 .btn-primary:hover { background: #1d4ed8; }
-.btn-success { background: #10b981; color: white; }
+.btn-success { background: #10b981; color: white; } /* For Copy */
 .btn-success:hover { background: #059669; }
+.btn-warning { background: #f59e0b; color: white; }
+.btn-warning:hover { background: #d97706; }
 
-/* Style mới cho các nút chức năng (giống nút CSV nhưng giữ màu đặc trưng) */
-.btn-modern {
-    border: 1px solid transparent;
-    padding: 8px 15px;
-    justify-content: center;
-}
-/* Màu xanh dương (Add, Save) */
-.btn-modern-primary { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+/* Modern Flat Buttons (Settings Tab) */
+.btn-modern { border: 1px solid transparent; padding: 8px 15px; justify-content: center; }
+.btn-modern-primary { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; } /* Add New */
 .btn-modern-primary:hover { background: #dbeafe; }
-/* Màu xám (Copy) */
-.btn-modern-secondary { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+.btn-modern-secondary { background: #f3f4f6; color: #374151; border-color: #e5e7eb; } /* Copy */
 .btn-modern-secondary:hover { background: #e5e7eb; }
-/* Màu vàng (Rename) */
-.btn-modern-warning { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.btn-modern-warning { background: #fffbeb; color: #b45309; border-color: #fde68a; } /* Rename */
 .btn-modern-warning:hover { background: #fef3c7; }
-/* Màu đỏ (Delete) */
-.btn-modern-danger { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.btn-modern-danger { background: #fef2f2; color: #b91c1c; border-color: #fecaca; } /* Delete */
 .btn-modern-danger:hover { background: #fee2e2; }
-/* Màu tím (CSV) */
-.btn-modern-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+.btn-modern-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; } /* CSV */
 .btn-modern-purple:hover { background: #e9d5ff; }
+
+/* Distinct Action Buttons (Request #5) */
+.btn-action-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; } /* Thêm cặp */
+.btn-action-green:hover { background: #a7f3d0; }
+.btn-action-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; } /* Lưu tất cả */
+.btn-action-blue:hover { background: #bfdbfe; }
 
 /* Toggle Button */
 .btn-toggle { background: #e5e7eb; color: #6b7280; justify-content: flex-start; min-width: 140px; }
-.btn-toggle.active { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.btn-toggle.active { background: #2563eb; color: white; border: 1px solid #1d4ed8; }
 
 .hidden { display: none !important; }
 .full-width { width: 100%; }
@@ -93,15 +105,11 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .badge-yellow { background: #f59e0b; color: white; }
 .badge-blue { background: #3b82f6; color: white; }
 .counters-group { display: flex; gap: 5px; align-items: center; }
-
 .limit-label { font-size: 10px; color: #ef4444; font-weight: 600; margin-left: 5px; font-style: italic; }
 .limit-label.vip { color: #059669; }
 
 /* === SETTINGS === */
-.panel-container {
-  background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  display: flex; flex-direction: column; max-width: 1000px; margin: 0 auto; width: 100%; 
-}
+.panel-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-width: 1000px; margin: 0 auto; width: 100%; }
 .panel-header { padding: 15px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
 .panel-header h2 { margin: 0; font-size: 16px; color: #111827; }
 .mode-actions { display: flex; gap: 8px; align-items: center; }
@@ -145,8 +153,7 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .split-buttons-group { display: flex; gap: 5px; flex-wrap: wrap; }
 .split-mode-btn { width: 32px; height: 32px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
 .split-mode-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
-.split-mode-btn.faded { opacity: 0.4; cursor: not-allowed; } /* Làm mờ nút */
-
+.split-mode-btn.faded { opacity: 0.4; cursor: not-allowed; } 
 #split-regex-input { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; width: 300px; font-family: monospace; }
 .split-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-content: start; }
 .outputs-wrapper { display: contents; }
@@ -169,13 +176,10 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .locked-feature { opacity: 0.5; pointer-events: none; filter: grayscale(100%); cursor: not-allowed; }
 .locked-wrapper { position: relative; display: inline-block; }
 .locked-overlay { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 4px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-/* LOGIN & VIP INFO HEADER */
-.login-area { display: flex; gap: 10px; align-items: center; }
 .vip-badge-info { font-size: 12px; font-weight: 700; color: #059669; background: #d1fae5; padding: 5px 10px; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
 .logout-btn { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: none; }
 
-/* MODAL MUA KEY */
+/* === MODAL STYLES (Dùng chung cho cả Index và Middleware) === */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); z-index: 2000;
@@ -185,14 +189,14 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .modal-box {
     background: white; width: 500px; padding: 25px; border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;
-    animation: slideInUp 0.3s ease-out;
+    animation: slideInUp 0.3s ease-out; font-family: 'Montserrat', sans-serif;
 }
 @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: 0; opacity: 1; } }
 .modal-close { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 20px; cursor: pointer; color: #9ca3af; }
 .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-.price-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center; }
+.price-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center; color: #374151; }
 .price-card.team { border-color: #3b82f6; background: #eff6ff; }
-.price-title { font-weight: 800; font-size: 14px; margin-bottom: 5px; display: block; }
+.price-title { font-weight: 800; font-size: 14px; margin-bottom: 5px; display: block; color: #111827; }
 .price-val { font-size: 13px; color: #374151; margin: 4px 0; }
 .price-note { font-size: 11px; color: #6b7280; font-style: italic; }
 .buy-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
