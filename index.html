@@ -2,7 +2,6 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tiện Ích Trịnh Hg - FREE</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
@@ -35,20 +34,9 @@
           <button class="modal-close">×</button>
           <h2 style="text-align:center; margin-top:0;">Bảng Giá Key VIP</h2>
           <div class="pricing-grid">
-              <div class="price-card">
-                  <span class="price-title">CÁ NHÂN</span>
-                  <p class="price-val">15k / 1 Tuần</p>
-                  <p class="price-val">40k / 1 Tháng</p>
-                  <span class="price-note">Tối đa 2 thiết bị</span>
-              </div>
-              <div class="price-card team">
-                  <span class="price-title">ĐỘI NHÓM</span>
-                  <p class="price-val">30k / 1 Tuần</p>
-                  <p class="price-val">80k / 1 Tháng</p>
-                  <span class="price-note">Tối đa 15 thiết bị</span>
-              </div>
+              <div class="price-card"><span class="price-title">CÁ NHÂN</span><div>15k / 1 Tuần</div><div>40k / 1 Tháng</div><div class="price-note">Max 2 thiết bị</div></div>
+              <div class="price-card team"><span class="price-title">ĐỘI NHÓM</span><div>30k / 1 Tuần</div><div>80k / 1 Tháng</div><div class="price-note">Max 15 thiết bị</div></div>
           </div>
-          <p style="text-align:center; font-size:12px; color:#666;">(Trên 15 thành viên vui lòng liên hệ Admin để giữ nguyên giá)</p>
           <div class="buy-actions">
               <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn-fb">Liên hệ Facebook</a>
               <a href="https://t.me/trinhhg57" target="_blank" class="btn-tele">Liên hệ Telegram</a>
@@ -81,10 +69,7 @@
           </div>
         </div>
         <div class="advanced-settings">
-            <div class="setting-block">
-                <label>Ngoại lệ Auto Caps:</label>
-                <div class="input-with-btn"><input type="text" id="caps-exception" placeholder=""><button id="save-exception-btn" class="btn btn-modern btn-modern-primary">Lưu</button></div>
-            </div>
+            <div class="setting-block"><label>Ngoại lệ Auto Caps:</label><div class="input-with-btn"><input type="text" id="caps-exception"><button id="save-exception-btn" class="btn btn-modern btn-modern-primary">Lưu</button></div></div>
         </div>
         <div class="list-actions">
            <button id="add-pair" class="btn btn-action-green icon-btn">Thêm cặp mới</button>
@@ -97,18 +82,12 @@
     <div id="replace" class="tab-content">
       <div class="split-pane">
         <div class="pane input-pane">
-          <div class="pane-header">
-            <span>Văn bản gốc <span class="limit-label">(Max 2000 từ)</span></span>
-            <span id="input-word-count" class="badge">Words: 0</span>
-          </div>
+          <div class="pane-header"><span>Văn bản gốc <span class="limit-label">(Max 2000 từ)</span></span><span id="input-word-count" class="badge">Words: 0</span></div>
           <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
           <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
         </div>
         <div class="pane output-pane">
-          <div class="pane-header">
-            <span>Kết quả</span>
-            <div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div>
-          </div>
+          <div class="pane-header"><span>Kết quả</span><div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div></div>
           <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="..."></div>
           <div class="pane-footer"><button id="copy-button" class="btn btn-success full-width">Sao chép văn bản</button></div>
         </div>
@@ -126,7 +105,7 @@
             <div class="split-buttons-group">
                 <button class="split-mode-btn active" data-split="2">2</button>
                 <button class="split-mode-btn" data-split="3">3</button>
-                <button class="split-mode-btn faded" data-split="4">4</button>
+                <button class="split-mode-btn" data-split="4">4</button>
                 <button class="split-mode-btn faded" data-split="5">5</button>
                 <button class="split-mode-btn faded" data-split="6">6</button>
                 <button class="split-mode-btn faded" data-split="7">7</button>
