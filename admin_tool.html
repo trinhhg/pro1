@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Key Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f9ff; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { cursor: pointer; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; font-weight: bold; width: 100%; }
+        button:hover { background: #1d4ed8; }
+        textarea { height: 80px; font-family: monospace; background: #f8fafc; }
+        .guide { font-size: 13px; color: #666; background: #fffbeb; padding: 10px; border-radius: 4px; margin-top: 20px; border: 1px solid #fcd34d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="margin-top:0; text-align:center;">Công Cụ Tạo Key VIP</h2>
+        
+        <div class="group">
+            <label>Thời hạn gói:</label>
+            <select id="duration">
+                <option value="2592000">1 Tháng (30 ngày)</option>
+                <option value="7776000">3 Tháng (90 ngày)</option>
+                <option value="15552000">6 Tháng (180 ngày)</option>
+                <option value="31536000">1 Năm (365 ngày)</option>
+                <option value="3153600000">Vĩnh viễn (100 năm)</option>
+            </select>
+        </div>
+
+        <div class="group">
+            <label>Tên khách hàng / Ghi chú:</label>
+            <input type="text" id="note" placeholder="Ví dụ: Nguyen Van A - Facebook">
+        </div>
+
+        <button onclick="generate()">TẠO DỮ LIỆU</button>
+        
+        <hr>
+
+        <div class="group">
+            <label>1. Key (Mã kích hoạt):</label>
+            <input type="text" id="out-key" readonly onclick="this.select()">
+        </div>
+
+        <div class="group">
+            <label>2. Value (Dữ liệu JSON):</label>
+            <textarea id="out-value" readonly onclick="this.select()"></textarea>
+        </div>
+
+        <div class="guide">
+            <strong>Hướng dẫn nhập vào Cloudflare:</strong><br>
+            1. Vào Dashboard -> Workers & Pages -> KV -> Chọn Namespace <code>SITE_PASSWORD</code>.<br>
+            2. Tab <strong>KV Pairs</strong> -> Bấm <strong>Add entry</strong>.<br>
+            3. Copy ô <strong>Key</strong> dán vào Key.<br>
+            4. Copy ô <strong>Value</strong> dán vào Value.<br>
+            5. Bấm Add. Gửi Key cho khách.
+        </div>
+    </div>
+
+    <script>
+        function generate() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let key = 'VIP-';
+            for(let i=0; i<8; i++) key += chars.charAt(Math.floor(Math.random() * chars.length));
+            
+            const seconds = parseInt(document.getElementById('duration').value);
+            const note = document.getElementById('note').value || 'Khach le';
+            
+            const data = {
+                duration_seconds: seconds,
+                activated_at: null,
+                expires_at: null,
+                note: note,
+                created_at: new Date().toISOString()
+            };
+
+            document.getElementById('out-key').value = key;
+            document.getElementById('out-value').value = JSON.stringify(data);
+        }
+    </script>
+</body>
+</html>
