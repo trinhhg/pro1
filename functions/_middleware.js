@@ -1,6 +1,6 @@
 // === CẤU HÌNH TELEGRAM BOT ===
-const TG_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"; // Thay Token của bạn vào đây
-const TG_CHAT_ID = "YOUR_CHAT_ID_HERE";     // Thay Chat ID của bạn vào đây
+const TG_BOT_TOKEN = " 8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; // Thay Token của bạn vào đây
+const TG_CHAT_ID = " 5524168349";     // Thay Chat ID của bạn vào đây
 // =============================
 
 export async function onRequest(context) {
