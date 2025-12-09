@@ -3,12 +3,13 @@
 body {
   font-family: 'Montserrat', sans-serif;
   margin: 0;
-  height: 100vh;
+  /* CHANGE: Cho phép body scroll tự nhiên, không fix height 100vh nữa */
+  min-height: 100vh; 
   display: flex;
   flex-direction: column;
   background-color: #f3f4f6;
   color: #374151;
-  overflow: hidden;
+  /* Xóa overflow: hidden để hiện thanh cuộn trình duyệt */
 }
 
 /* FONT CHỮ TRONG Ô INPUT/OUTPUT */
@@ -16,7 +17,7 @@ textarea, input, .output-div {
     font-family: 'Montserrat', sans-serif !important;
 }
 
-/* === SCROLLBAR === */
+/* === SCROLLBAR (Custom cho Textarea) === */
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -27,6 +28,8 @@ textarea, input, .output-div {
   background: white; border-bottom: 1px solid #e5e7eb; padding: 0 20px; height: 60px;
   display: flex; justify-content: space-between; align-items: center;
   flex-shrink: 0; z-index: 100;
+  /* Giữ header dính trên cùng khi cuộn trang */
+  position: sticky; top: 0;
 }
 .header-left { flex: 1.5; }
 .header-right { flex: 0.5; }
@@ -59,13 +62,13 @@ textarea, input, .output-div {
 
 /* === MAIN CONTENT === */
 .app-body { 
-  flex: 1; padding: 15px; display: flex; flex-direction: column; overflow: hidden; position: relative;
+  flex: 1; padding: 15px; display: flex; flex-direction: column; 
+  /* Cho phép nội dung giãn ra để tạo thanh cuộn */
+  height: auto; 
 }
-.tab-content { display: none; width: 100%; height: 100%; flex-direction: column; }
-.tab-content.active { display: flex; }
 
-#settings, #split { overflow-y: auto; padding-bottom: 20px; }
-#replace { overflow: hidden; }
+.tab-content { display: none; width: 100%; flex-direction: column; }
+.tab-content.active { display: flex; }
 
 /* === BUTTONS & COMPONENTS === */
 .btn {
@@ -84,6 +87,7 @@ textarea, input, .output-div {
 .btn-danger:hover { background: #dc2626; }
 .btn-warning { background: #f59e0b; color: white; }
 .btn-warning:hover { background: #d97706; }
+.btn-sm { padding: 6px 10px; font-size: 11px; }
 
 /* TOGGLE BUTTON STYLE */
 .btn-toggle { 
@@ -95,26 +99,29 @@ textarea, input, .output-div {
     background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; 
 }
 
-/* NÚT CSV STYLE TÍM (Giống toggle active nhưng màu tím) */
+/* NÚT CSV STYLE TÍM */
 .btn-toggle.purple {
-    background: #f3e8ff; /* Tím nhạt */
-    color: #6b21a8;      /* Tím đậm */
-    border: 1px solid #d8b4fe; /* Viền tím */
+    background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe;
     justify-content: center;
 }
-.btn-toggle.purple:hover {
-    background: #e9d5ff;
-}
+.btn-toggle.purple:hover { background: #e9d5ff; }
 
 .hidden { display: none !important; }
 .full-width { width: 100%; }
 .icon-btn { min-width: 120px; }
+.input-with-btn { display: flex; gap: 5px; align-items: center; width: 100%; }
+
+/* BADGES */
 .badge { background: #1abc9c; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-yellow { background: #f59e0b; color: white; }
+.badge-blue { background: #3b82f6; color: white; }
+.counters-group { display: flex; gap: 5px; align-items: center; }
 
 /* === SETTINGS === */
 .panel-container {
   background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  display: flex; flex-direction: column; max-width: 1000px; margin: 0 auto; width: 100%; flex-shrink: 0;
+  display: flex; flex-direction: column; max-width: 1000px; margin: 0 auto; width: 100%; 
+  /* Không set height cố định để scroll */
 }
 .panel-header { padding: 15px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
 .panel-header h2 { margin: 0; font-size: 16px; color: #111827; }
@@ -126,17 +133,18 @@ textarea, input, .output-div {
 .toolbar-group { display: flex; gap: 8px; }
 
 .advanced-settings { padding: 15px 20px; background: #fff; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 10px; }
-.setting-block { display: flex; flex-direction: column; gap: 5px; }
+.setting-block { display: flex; flex-direction: column; gap: 5px; width: 100%; }
 .setting-block label { font-size: 12px; font-weight: 600; color: #4b5563; }
 .setting-block input[type="text"] { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; width: 100%; }
 
 .list-actions { padding: 10px 20px; display: flex; gap: 10px; }
-.scroll-area { padding: 10px 20px; background: #f9fafb; }
+.scroll-area { padding: 10px 20px; background: #f9fafb; min-height: 200px; }
 .punctuation-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
 .punctuation-item input { flex: 1; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; }
 .punctuation-item button.remove { width: 28px; height: 28px; border-radius: 4px; border: none; background: #fee2e2; color: #dc2626; cursor: pointer; }
 
-/* === REPLACE PANE === */
+/* === REPLACE PANE (Tab này vẫn cần cố định chiều cao để so sánh trái phải) === */
+#replace { height: calc(100vh - 100px); } 
 .split-pane { display: flex; gap: 15px; height: 100%; min-height: 0; }
 .pane { flex: 1; display: flex; flex-direction: column; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; height: 100%; min-height: 0; }
 .pane-header { padding: 10px 15px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; flex-shrink: 0; }
@@ -152,7 +160,7 @@ mark.hl-blue { background-color: #93c5fd; color: #000; border-radius: 2px; paddi
 mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; padding: 0 1px; border-bottom: 2px solid #f97316; display: inline; }
 
 /* === SPLIT TAB === */
-.split-controls-wrapper { background: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; }
+.split-controls-wrapper { background: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .split-mode-selector { display: flex; gap: 20px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 8px; }
 .split-mode-selector label { cursor: pointer; display: flex; align-items: center; gap: 5px; }
 .split-sub-controls { display: flex; align-items: center; gap: 10px; font-size: 13px; }
@@ -160,7 +168,6 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .split-mode-btn { width: 32px; height: 32px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
 .split-mode-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
 #split-regex-input { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; width: 300px; font-family: monospace; }
-.hint { font-size: 11px; color: #9ca3af; font-style: italic; }
 
 .split-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-content: start; }
 .outputs-wrapper { display: contents; }
