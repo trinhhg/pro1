@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tiện Ích Của Trịnh Hg - V20 (Fixed & Smooth)</title>
+  <title>Tiện Ích Của Trịnh Hg - V21 (Final Logic Fix)</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
 </head>
@@ -61,7 +61,10 @@
         <div class="advanced-settings">
             <div class="setting-block">
                 <label>Ngoại lệ Auto Caps (ngăn cách bằng dấu phẩy):</label>
-                <input type="text" id="caps-exception" placeholder="Ví dụ: jpg, png, com, vn (Những từ này sẽ không bị viết hoa sau dấu chấm)">
+                <div class="input-with-btn">
+                    <input type="text" id="caps-exception" placeholder="Ví dụ: jpg, png, com, vn (Những từ này sẽ không bị viết hoa sau dấu chấm)">
+                    <button id="save-exception-btn" class="btn btn-primary btn-sm">Lưu</button>
+                </div>
             </div>
         </div>
 
@@ -92,8 +95,12 @@
 
         <div class="pane output-pane">
           <div class="pane-header">
-            <span>Kết quả <span style="font-size: 10px; font-weight: 400;">(Vàng: Thay thế | Xanh: AutoCaps | Cam: Cả hai)</span></span>
-            <span id="output-word-count" class="badge">Words: 0</span>
+            <span>Kết quả</span>
+            <div class="counters-group">
+                <span id="count-replace" class="badge badge-yellow">Replace: 0</span>
+                <span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span>
+                <span id="output-word-count" class="badge">Words: 0</span>
+            </div>
           </div>
           <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="Kết quả sẽ hiện ra ở đây..."></div>
           <div class="pane-footer">
@@ -127,8 +134,10 @@
 
         <div id="split-type-regex" class="split-sub-controls hidden">
             <label>Regex nhận diện:</label>
-            <input type="text" id="split-regex-input" value="^(Chương|Chapter|Hồi)\s+\d+[:.]?" placeholder="VD: ^Chương \d+">
-            <span class="hint">Tìm dòng bắt đầu bằng Chương X...</span>
+            <div class="input-with-btn">
+                <input type="text" id="split-regex-input" value="" placeholder="Ví dụ: ^(Chương|Chapter|Hồi)\s+\d+[:.]?">
+                <button id="clear-split-regex" class="btn btn-danger btn-sm">Xóa kết quả</button>
+            </div>
         </div>
       </div>
 
