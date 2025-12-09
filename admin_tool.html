@@ -2,82 +2,123 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Key Generator</title>
+    <title>Admin Key Tool v2</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f0f9ff; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         select, input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { cursor: pointer; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; font-weight: bold; width: 100%; }
-        button:hover { background: #1d4ed8; }
-        textarea { height: 80px; font-family: monospace; background: #f8fafc; }
-        .guide { font-size: 13px; color: #666; background: #fffbeb; padding: 10px; border-radius: 4px; margin-top: 20px; border: 1px solid #fcd34d; }
+        .row { display: flex; gap: 10px; }
+        button { cursor: pointer; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; font-weight: bold; width: 100%; margin-top: 10px; }
+        button.copy-btn { background: #10b981; margin-top: 5px; width: auto; font-size: 12px; padding: 5px 10px; }
+        .custom-box { background: #f9fafb; padding: 10px; border: 1px dashed #ccc; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 style="margin-top:0; text-align:center;">Công Cụ Tạo Key VIP</h2>
+        <h2 style="text-align:center; margin-top:0;">Tạo Key VIP Trịnh Hg</h2>
         
         <div class="group">
-            <label>Thời hạn gói:</label>
-            <select id="duration">
-                <option value="2592000">1 Tháng (30 ngày)</option>
-                <option value="7776000">3 Tháng (90 ngày)</option>
-                <option value="15552000">6 Tháng (180 ngày)</option>
-                <option value="31536000">1 Năm (365 ngày)</option>
-                <option value="3153600000">Vĩnh viễn (100 năm)</option>
+            <label>Loại Gói:</label>
+            <select id="pack_type" onchange="toggleCustom()">
+                <option value="free_5">Free 5 Ngày (Key FREE-...)</option>
+                <option value="week_1">1 Tuần (7 ngày)</option>
+                <option value="month_1" selected>1 Tháng (30 ngày)</option>
+                <option value="month_3">3 Tháng (90 ngày)</option>
+                <option value="year_1">1 Năm (365 ngày)</option>
+                <option value="custom">Tùy chỉnh...</option>
+            </select>
+        </div>
+
+        <div id="custom_area" class="custom-box">
+            <div class="group">
+                <label>Số ngày:</label>
+                <input type="number" id="custom_days" value="10">
+            </div>
+        </div>
+
+        <div class="group">
+            <label>Giới hạn thiết bị:</label>
+            <select id="max_devices">
+                <option value="2">Cá nhân (2 thiết bị)</option>
+                <option value="15">Đội nhóm (15 thiết bị)</option>
+                <option value="100">Không giới hạn (100)</option>
             </select>
         </div>
 
         <div class="group">
-            <label>Tên khách hàng / Ghi chú:</label>
-            <input type="text" id="note" placeholder="Ví dụ: Nguyen Van A - Facebook">
+            <label>Ghi chú (Tên khách):</label>
+            <input type="text" id="note" placeholder="VD: Nguyen Van A">
         </div>
 
         <button onclick="generate()">TẠO DỮ LIỆU</button>
-        
         <hr>
 
         <div class="group">
-            <label>1. Key (Mã kích hoạt):</label>
-            <input type="text" id="out-key" readonly onclick="this.select()">
+            <label>1. Key:</label>
+            <div class="row">
+                <input type="text" id="out-key" readonly>
+                <button class="copy-btn" onclick="copy('out-key')">Copy</button>
+            </div>
         </div>
 
         <div class="group">
-            <label>2. Value (Dữ liệu JSON):</label>
-            <textarea id="out-value" readonly onclick="this.select()"></textarea>
-        </div>
-
-        <div class="guide">
-            <strong>Hướng dẫn nhập vào Cloudflare:</strong><br>
-            1. Vào Dashboard -> Workers & Pages -> KV -> Chọn Namespace <code>SITE_PASSWORD</code>.<br>
-            2. Tab <strong>KV Pairs</strong> -> Bấm <strong>Add entry</strong>.<br>
-            3. Copy ô <strong>Key</strong> dán vào Key.<br>
-            4. Copy ô <strong>Value</strong> dán vào Value.<br>
-            5. Bấm Add. Gửi Key cho khách.
+            <label>2. Value (JSON):</label>
+            <div class="row">
+                <textarea id="out-value" readonly style="height:80px;"></textarea>
+                <button class="copy-btn" onclick="copy('out-value')">Copy</button>
+            </div>
         </div>
     </div>
 
     <script>
+        function toggleCustom() {
+            const t = document.getElementById('pack_type').value;
+            document.getElementById('custom_area').style.display = (t === 'custom') ? 'block' : 'none';
+        }
+
         function generate() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let key = 'VIP-';
-            for(let i=0; i<8; i++) key += chars.charAt(Math.floor(Math.random() * chars.length));
-            
-            const seconds = parseInt(document.getElementById('duration').value);
+            const type = document.getElementById('pack_type').value;
+            const maxDev = parseInt(document.getElementById('max_devices').value);
             const note = document.getElementById('note').value || 'Khach le';
             
+            let days = 0;
+            let prefix = 'VIP-';
+
+            if(type === 'free_5') { days = 5; prefix = 'FREE-'; }
+            else if(type === 'week_1') days = 7;
+            else if(type === 'month_1') days = 30;
+            else if(type === 'month_3') days = 90;
+            else if(type === 'year_1') days = 365;
+            else if(type === 'custom') days = parseInt(document.getElementById('custom_days').value);
+
+            // Generate Key
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let rnd = '';
+            for(let i=0; i<8; i++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+            const key = prefix + rnd;
+
+            // Generate JSON
             const data = {
-                duration_seconds: seconds,
+                duration_seconds: days * 86400,
+                max_devices: maxDev,
                 activated_at: null,
                 expires_at: null,
+                devices: [],
                 note: note,
+                type: type,
                 created_at: new Date().toISOString()
             };
 
             document.getElementById('out-key').value = key;
             document.getElementById('out-value').value = JSON.stringify(data);
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
         }
     </script>
 </body>
