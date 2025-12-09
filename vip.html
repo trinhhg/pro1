@@ -5,11 +5,17 @@
   <title>Tiện Ích Trịnh Hg - VIP PREMIUM</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
-  <script>const IS_VIP = true;</script>
+  <script>window.IS_VIP = true;</script>
 </head>
 <body>
   <header class="app-header">
-    <div class="header-left"><h1>Tiện Ích Của Trịnh Hg (VIP)</h1></div>
+    <div class="header-left">
+      <h1>Tiện Ích Của Trịnh Hg (VIP)</h1>
+      <div class="donate-info">
+        <span class="donate-label">VIP ACCESS</span>
+        <span class="donate-details">CẢM ƠN BẠN ĐÃ ỦNG HỘ!</span>
+      </div>
+    </div>
     <div class="header-center">
       <nav class="tabs">
         <button class="tab-button active" data-tab="settings">Cài Đặt</button>
@@ -53,8 +59,8 @@
             </div>
         </div>
         <div class="list-actions">
-           <button id="add-pair" class="btn btn-modern btn-modern-primary icon-btn">Thêm cặp mới</button>
-           <button id="save-settings" class="btn btn-modern btn-modern-primary icon-btn">Lưu tất cả</button>
+           <button id="add-pair" class="btn btn-action-green icon-btn">Thêm cặp mới</button>
+           <button id="save-settings" class="btn btn-action-blue icon-btn">Lưu tất cả</button>
         </div>
         <div class="scroll-area"><div id="punctuation-list"></div><div id="empty-state" class="hidden">Chưa có cặp thay thế nào.</div></div>
       </div>
@@ -63,24 +69,18 @@
     <div id="replace" class="tab-content">
       <div class="split-pane">
         <div class="pane input-pane">
-          <div class="pane-header">
-            <span>Văn bản gốc <span class="limit-label vip">(Không giới hạn)</span></span>
-            <span id="input-word-count" class="badge">Words: 0</span>
-          </div>
+          <div class="pane-header"><span>Văn bản gốc <span class="limit-label vip">(Không giới hạn)</span></span><span id="input-word-count" class="badge">Words: 0</span></div>
           <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
           <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
         </div>
         <div class="pane output-pane">
-          <div class="pane-header">
-            <span>Kết quả</span>
-            <div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div>
-          </div>
+          <div class="pane-header"><span>Kết quả</span><div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div></div>
           <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="..."></div>
           <div class="pane-footer"><button id="copy-button" class="btn btn-success full-width">Sao chép văn bản</button></div>
         </div>
       </div>
     </div>
-
+    
     <div id="split" class="tab-content">
       <div class="split-controls-wrapper">
         <div class="split-mode-selector">
@@ -104,7 +104,7 @@
         <div id="split-type-regex" class="split-sub-controls hidden">
             <label>Regex nhận diện:</label>
             <div class="input-with-btn">
-                <input type="text" id="split-regex-input" value="^(Chương|Chapter|Hồi|Quyển)\s+(?:[\d]+|[IVXLCDM]+|[a-zA-Zà-ỹ]+)" placeholder="Ví dụ: Chương 1, Chapter One...">
+                <input type="text" id="split-regex-input" value="^(Chương|Chapter|Hồi|Quyển)\s+(?:[\d]+|[IVXLCDM]+|[a-zA-Zà-ỹ]+)" placeholder="...">
                 <button id="clear-split-regex" class="btn btn-modern btn-modern-danger btn-sm">Xóa kết quả</button>
             </div>
         </div>
