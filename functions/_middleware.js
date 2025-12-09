@@ -1,35 +1,36 @@
 // === CẤU HÌNH TELEGRAM BOT ===
-const TG_BOT_TOKEN = " 8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; // Thay Token của bạn vào đây
-const TG_CHAT_ID = " 5524168349";     // Thay Chat ID của bạn vào đây
+const TG_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
+const TG_CHAT_ID = "5524168349";
 // =============================
 
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // Helper gửi Telegram
   async function sendTelegram(msg) {
-      if(!TG_BOT_TOKEN || !TG_CHAT_ID || TG_BOT_TOKEN.includes("YOUR_")) return;
-      const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
-      await fetch(url, {
+      if(!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+      const tgUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
+      await fetch(tgUrl, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
       });
   }
 
-  // 1. API HEARTBEAT
+  // HEARTBEAT
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
       const keyVal = await env.PRO_1.get(userKey);
       if(!keyVal) return new Response("Invalid", {status: 401});
-      const d = JSON.parse(keyVal);
-      if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401});
-      return new Response("OK", {status: 200});
+      try {
+          const d = JSON.parse(keyVal);
+          if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401});
+          return new Response("OK", {status: 200});
+      } catch(e) { return new Response("Data Error", {status: 401}); }
   }
 
-  // 2. LOGIN & TELEGRAM NOTI
+  // LOGIN LOGIC
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.formData();
@@ -42,8 +43,14 @@ export async function onRequest(context) {
         const keyVal = await env.PRO_1.get(inputKey);
         if (!keyVal) return new Response(renderLoginPage("Key không tồn tại!"), {headers:{"Content-Type":"text/html"}});
 
-        let keyData = JSON.parse(keyVal);
+        let keyData;
+        try {
+            keyData = JSON.parse(keyVal);
+        } catch(e) {
+            return new Response(renderLoginPage("Lỗi dữ liệu Key (JSON Error)! Liên hệ Admin."), {headers:{"Content-Type":"text/html"}});
+        }
 
+        // Logic Activate
         if (!keyData.activated_at) {
             const now = Date.now();
             const dur = (keyData.duration_seconds || (30*86400)) * 1000;
@@ -67,8 +74,8 @@ export async function onRequest(context) {
             await env.PRO_1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // GỬI TELEGRAM
-        const msg = `🚀 NEW LOGIN!\nKey: ${inputKey}\nIP: ${ip}\nDevice: ${deviceId}\nType: ${keyData.type||'Unknown'}`;
+        // Send Telegram Noti
+        const msg = `🚀 LOGIN SUCCESS!\nKey: ${inputKey}\nIP: ${ip}\nDevice: ${deviceId}\nExpires: ${new Date(keyData.expires_at).toLocaleDateString()}`;
         context.waitUntil(sendTelegram(msg));
 
         return new Response(null, {
@@ -84,17 +91,19 @@ export async function onRequest(context) {
   }
 
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
-
   if (url.pathname === "/logout") return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
 
+  // ROUTING
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
       if (userKey) {
           const keyVal = await env.PRO_1.get(userKey);
           if (keyVal) {
-              const d = JSON.parse(keyVal);
-              if (d.expires_at && Date.now() < d.expires_at) isVip = true;
+              try {
+                  const d = JSON.parse(keyVal);
+                  if (d.expires_at && Date.now() < d.expires_at) isVip = true;
+              } catch(e) {}
           }
       }
       const target = isVip ? "/vip.html" : "/index.html";
@@ -110,7 +119,6 @@ function getCookie(req, name) {
     return m ? m[1] : null;
 }
 
-// Hàm render Login với Modal Mua Key tích hợp
 function renderLoginPage(errorMsg) {
   return `
 <!DOCTYPE html>
@@ -138,7 +146,6 @@ function renderLoginPage(errorMsg) {
     .extra-info a { color: #2563eb; font-weight: 700; text-decoration: none; }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: 0; opacity: 1; } }
     
-    /* MODAL STYLES EMBEDDED */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
     .modal-overlay.active { display: flex; }
     .modal-box { background: white; width: 450px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; animation: slideIn 0.3s ease-out; }
@@ -157,7 +164,6 @@ function renderLoginPage(errorMsg) {
         if(!did) { did = 'dev_'+Math.random().toString(36).substr(2); localStorage.setItem('trinh_hg_device_id', did); }
         document.getElementById('device-id-input').value = did;
         
-        // Modal Logic
         const modal = document.getElementById('buy-key-modal');
         const openBtn = document.getElementById('open-modal-btn');
         const closeBtn = document.querySelector('.modal-close');
