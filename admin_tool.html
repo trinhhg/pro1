@@ -2,105 +2,90 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TrinhHG Admin Key Generator</title>
+    <title>Admin Key Generator</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: #f0f4f8; margin:0; }
-        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; }
-        h1 { margin-top: 0; color: #1e3a8a; text-align: center; margin-bottom: 30px; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f4f8; margin:0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; }
+        h1 { margin-top: 0; color: #1e3a8a; text-align: center; margin-bottom: 20px; font-size: 24px; }
         
-        .section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
-        .label { font-weight: 700; color: #475569; display: block; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .col { display: flex; flex-direction: column; gap: 20px; }
         
-        /* Toggles Grid */
-        .toggle-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .label { font-weight: 700; color: #475569; display: block; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }
+        .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .toggle-btn {
-            padding: 10px 20px; border: 2px solid #cbd5e1; background: white; color: #64748b;
-            border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;
-            min-width: 100px; text-align: center;
+            padding: 8px 15px; border: 1px solid #cbd5e1; background: white; color: #64748b;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; min-width: 80px; text-align: center;
         }
         .toggle-btn:hover { background: #f1f5f9; }
-        .toggle-btn.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .toggle-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
         
-        /* Custom Inputs */
-        input[type="text"], input[type="number"] { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 200px; font-size: 14px; }
+        input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; }
         
-        /* Output Area */
-        .output-row { display: flex; gap: 20px; margin-bottom: 10px; align-items: center; }
-        .output-row input { flex: 1; font-family: monospace; background: #f8fafc; color: #334155; }
-        .copy-btn { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .copy-btn:hover { background: #059669; }
+        .output-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .output-row input { font-family: monospace; background: #f8fafc; font-size: 12px; }
+        .copy-btn { background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         
-        .gen-btn { background: #1e40af; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
-        .gen-btn:hover { background: #1e3a8a; }
-        
+        .gen-btn { background: #1e40af; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 20px; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛠️ ADMIN KEY GENERATOR</h1>
+        <h1>🛠️ ADMIN KEY TOOL</h1>
         
-        <div class="section">
-            <span class="label">1. Loại Key</span>
-            <div class="toggle-group" id="grp-type">
-                <div class="toggle-btn active" onclick="sel('grp-type', this, 'VIP')">VIP</div>
-                <div class="toggle-btn" onclick="sel('grp-type', this, 'FREE')">FREE</div>
-            </div>
-        </div>
-
-        <div class="section">
-            <span class="label">2. Đối Tượng (Thiết Bị)</span>
-            <div class="toggle-group" id="grp-cat">
-                <div class="toggle-btn active" onclick="sel('grp-cat', this, 2)">CÁ NHÂN (2)</div>
-                <div class="toggle-btn" onclick="sel('grp-cat', this, 15)">ĐỘI NHÓM (15)</div>
-                <div class="toggle-btn" onclick="sel('grp-cat', this, 'custom')">TÙY CHỈNH</div>
-            </div>
-            <div id="custom-device-input" class="hidden" style="margin-top:10px;">
-                <input type="number" id="inp-devices" placeholder="Số thiết bị..." value="1">
-            </div>
-        </div>
-
-        <div class="section">
-            <span class="label">3. Thời Hạn</span>
-            <div class="toggle-group" id="grp-dur">
-                <div class="toggle-btn" onclick="sel('grp-dur', this, 5)">5 Ngày</div>
-                <div class="toggle-btn" onclick="sel('grp-dur', this, 7)">1 Tuần</div>
-                <div class="toggle-btn active" onclick="sel('grp-dur', this, 30)">1 Tháng</div>
-                <div class="toggle-btn" onclick="sel('grp-dur', this, 'custom')">Tùy Chỉnh</div>
-            </div>
-            <div id="custom-days-input" class="hidden" style="margin-top:10px;">
-                <input type="number" id="inp-days" placeholder="Số ngày..." value="1">
-            </div>
-        </div>
-
-        <div class="section">
-            <span class="label">4. Thông Tin & Số Lượng</span>
-            <div style="display:flex; gap:20px; align-items:flex-end;">
+        <div class="main-grid">
+            <div class="col">
                 <div>
-                    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Ghi chú (Để trống tự sinh):</label>
-                    <input type="text" id="inp-note" placeholder="VD: KhachA..." style="width:300px;">
+                    <span class="label">1. Loại Key & Đối Tượng</span>
+                    <div class="toggle-group" id="grp-type" style="margin-bottom:10px;">
+                        <div class="toggle-btn active" onclick="sel('grp-type', this, 'VIP')">VIP</div>
+                        <div class="toggle-btn" onclick="sel('grp-type', this, 'FREE')">FREE</div>
+                    </div>
+                    <div class="toggle-group" id="grp-cat">
+                        <div class="toggle-btn active" onclick="sel('grp-cat', this, 2)">CÁ NHÂN (2)</div>
+                        <div class="toggle-btn" onclick="sel('grp-cat', this, 15)">ĐỘI NHÓM (15)</div>
+                        <div class="toggle-btn" onclick="sel('grp-cat', this, 'custom')">TÙY CHỈNH</div>
+                    </div>
+                    <input type="number" id="inp-devices" class="hidden" placeholder="Số thiết bị..." style="margin-top:5px;">
                 </div>
+
                 <div>
-                    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Số lượng Key:</label>
-                    <div class="toggle-group" id="grp-qty" style="margin-bottom:0;">
+                    <span class="label">2. Thời Hạn</span>
+                    <div class="toggle-group" id="grp-dur">
+                        <div class="toggle-btn" onclick="sel('grp-dur', this, 5*86400)">5 Ngày</div>
+                        <div class="toggle-btn" onclick="sel('grp-dur', this, 7*86400)">1 Tuần</div>
+                        <div class="toggle-btn active" onclick="sel('grp-dur', this, 30*86400)">1 Tháng</div>
+                        <div class="toggle-btn" onclick="sel('grp-dur', this, 'custom')">Tùy Chỉnh (Giây)</div>
+                    </div>
+                    <input type="number" id="inp-seconds" class="hidden" placeholder="Nhập số giây (VD: 60)..." style="margin-top:5px;">
+                </div>
+            </div>
+
+            <div class="col">
+                <div>
+                    <span class="label">3. Thông Tin & Số Lượng</span>
+                    <label style="font-size:12px; display:block; margin-bottom:5px;">Ghi chú (Tên khách):</label>
+                    <input type="text" id="inp-note" placeholder="Để trống tự sinh...">
+                    
+                    <label style="font-size:12px; display:block; margin:10px 0 5px;">Số lượng Key:</label>
+                    <div class="toggle-group" id="grp-qty">
                         <div class="toggle-btn active" onclick="sel('grp-qty', this, 1)">1</div>
                         <div class="toggle-btn" onclick="sel('grp-qty', this, 5)">5</div>
                         <div class="toggle-btn" onclick="sel('grp-qty', this, 10)">10</div>
                     </div>
                 </div>
+                <button class="gen-btn" onclick="generate()">TẠO KEY NGAY</button>
             </div>
         </div>
 
-        <button class="gen-btn" onclick="generate()">TẠO KEY NGAY</button>
-
-        <div class="section" style="border:none; margin-top:30px;">
+        <div style="margin-top:30px; border-top:1px solid #eee; padding-top:20px;">
             <div id="output-list"></div>
         </div>
     </div>
 
     <script>
-        // State
-        let config = { type: 'VIP', cat: 2, dur: 30, qty: 1 };
+        let config = { type: 'VIP', cat: 2, dur: 30*86400, qty: 1 };
 
         function sel(grpId, el, val) {
             document.querySelectorAll(`#${grpId} .toggle-btn`).forEach(b => b.classList.remove('active'));
@@ -109,11 +94,11 @@
             if(grpId === 'grp-type') config.type = val;
             if(grpId === 'grp-cat') {
                 config.cat = val;
-                document.getElementById('custom-device-input').classList.toggle('hidden', val !== 'custom');
+                document.getElementById('inp-devices').classList.toggle('hidden', val !== 'custom');
             }
             if(grpId === 'grp-dur') {
                 config.dur = val;
-                document.getElementById('custom-days-input').classList.toggle('hidden', val !== 'custom');
+                document.getElementById('inp-seconds').classList.toggle('hidden', val !== 'custom');
             }
             if(grpId === 'grp-qty') config.qty = val;
         }
@@ -122,61 +107,45 @@
             const list = document.getElementById('output-list');
             list.innerHTML = '';
             
-            // Devices
-            let maxDev = config.cat;
-            if(maxDev === 'custom') maxDev = parseInt(document.getElementById('inp-devices').value) || 1;
-
-            // Duration
-            let days = config.dur;
-            if(days === 'custom') days = parseInt(document.getElementById('inp-days').value) || 1;
+            let maxDev = (config.cat === 'custom') ? parseInt(document.getElementById('inp-devices').value)||1 : config.cat;
+            let seconds = (config.dur === 'custom') ? parseInt(document.getElementById('inp-seconds').value)||60 : config.dur;
             
-            // Note
             let baseNote = document.getElementById('inp-note').value.trim();
             if(!baseNote) {
-                // Auto gen note based on type
-                if(config.type === 'FREE') baseNote = "keyfree";
+                if(config.type === 'FREE') baseNote = "free";
                 else if(maxDev === 2) baseNote = "canhan";
                 else if(maxDev === 15) baseNote = "doinhom";
-                else baseNote = "khachvip";
+                else baseNote = "vip";
             }
 
             for(let i=0; i<config.qty; i++) {
-                // Key Prefix
                 const prefix = (config.type === 'FREE') ? 'FREE-' : 'VIP-';
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let rnd = '';
+                let rnd = ''; 
                 for(let j=0; j<8; j++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
                 const key = prefix + rnd;
 
-                // JSON Value
-                const finalNote = (config.qty > 1) ? `${baseNote}${i+1}` : baseNote;
+                const note = (config.qty > 1) ? `${baseNote}${i+1}` : baseNote;
                 const data = {
-                    duration_seconds: days * 86400,
+                    duration_seconds: seconds,
                     max_devices: maxDev,
                     activated_at: null,
                     expires_at: null,
                     devices: [],
-                    note: finalNote,
+                    note: note,
                     type: config.type,
                     created_at: new Date().toISOString()
                 };
 
-                // Render UI
-                const row = document.createElement('div');
-                row.style.marginBottom = "20px";
-                row.innerHTML = `
-                    <div class="output-row">
-                        <span style="width:50px; font-weight:bold;">KEY:</span>
-                        <input type="text" value="${key}" id="key-${i}" readonly>
-                        <button class="copy-btn" onclick="copy('key-${i}')">Copy</button>
-                    </div>
-                    <div class="output-row">
-                        <span style="width:50px; font-weight:bold;">VAL:</span>
-                        <input type="text" value='${JSON.stringify(data)}' id="val-${i}" readonly>
-                        <button class="copy-btn" onclick="copy('val-${i}')">Copy</button>
-                    </div>
+                const div = document.createElement('div');
+                div.style.borderBottom = "1px dashed #eee";
+                div.style.paddingBottom = "10px";
+                div.style.marginBottom = "10px";
+                div.innerHTML = `
+                    <div class="output-row"><span style="width:40px; font-weight:bold;">KEY:</span><input type="text" value="${key}" id="k${i}" readonly><button class="copy-btn" onclick="copy('k${i}')">Copy</button></div>
+                    <div class="output-row"><span style="width:40px; font-weight:bold;">VAL:</span><input type="text" value='${JSON.stringify(data)}' id="v${i}" readonly><button class="copy-btn" onclick="copy('v${i}')">Copy</button></div>
                 `;
-                list.appendChild(row);
+                list.appendChild(div);
             }
         }
 
