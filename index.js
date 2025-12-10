@@ -1,10 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. CONFIGURATION & STATE
+    // 1. CONFIG & INIT
     const isVipUser = (typeof window.IS_VIP !== 'undefined' && window.IS_VIP === true);
-    const STORAGE_KEY = 'trinh_hg_settings_v27_fixed';
-    const INPUT_STATE_KEY = 'trinh_hg_input_v27';
+    const STORAGE_KEY = 'trinh_hg_settings_v28_stable';
+    const INPUT_STATE_KEY = 'trinh_hg_input_v28';
     const MARKERS = { R_S:'\uE000', R_E:'\uE001', C_S:'\uE002', C_E:'\uE003', B_S:'\uE004', B_E:'\uE005' };
     
+    // Check Transition (Free <-> VIP)
+    const lastVipStatus = localStorage.getItem('last_vip_status');
+    if (lastVipStatus !== String(isVipUser)) {
+        localStorage.removeItem(INPUT_STATE_KEY); // Clear inputs on switch
+        localStorage.setItem('last_vip_status', isVipUser);
+    }
+
     // Device ID
     let deviceId = localStorage.getItem('trinh_hg_device_id');
     if (!deviceId) {
@@ -14,35 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const hiddenDeviceInput = document.getElementById('device-id-input');
     if (hiddenDeviceInput) hiddenDeviceInput.value = deviceId;
 
-    // Heartbeat
+    // Heartbeat (VIP)
     if (isVipUser) {
         setInterval(() => {
             fetch('/api/heartbeat').then(res => { if (res.status === 401) window.location.reload(); }).catch(() => {});
         }, 30000);
     }
 
-    // Default State (Added timestamp for Free Reset)
+    // Default State
     const defaultState = {
         currentMode: 'default', activeTab: 'settings',
-        timestamp: Date.now(),
         modes: { default: { pairs: [], matchCase: false, wholeWord: false, autoCaps: false, exceptions: '' } }
     };
 
     let state;
     try { state = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e){}
-    
-    // Fix 5: Free Reset after 24h
-    if (!isVipUser && state && state.timestamp) {
-        const now = Date.now();
-        if (now - state.timestamp > 24 * 60 * 60 * 1000) state = defaultState; // Reset
-    }
-    
     if (!state || !state.modes) state = defaultState;
     if (!state.modes[state.currentMode]) state.currentMode = 'default';
-
-    // Update timestamp on load
-    state.timestamp = Date.now();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
     let currentSplitMode = 2;
     let saveTimeout;
@@ -84,11 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal: document.querySelector('.modal-close')
     };
 
-    // 3. FUNCTIONS
-    function saveState() { 
-        state.timestamp = Date.now(); // Update time on save
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
-    }
+    // 3. HELPER FUNCTIONS
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
     function saveTempInput() {
         const data = { inputText: els.inputText.value, splitInput: els.splitInput.value };
         localStorage.setItem(INPUT_STATE_KEY, JSON.stringify(data));
@@ -113,10 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         saveTimeout=setTimeout(()=>{ saveTempInput(); if(state.activeTab==='settings') savePairs(true); },500); 
     }
     function updateCounters() {
-        // Real-time counting (Fix 3 & 4) - Count ALL words
         els.inputCount.textContent = 'Words: ' + countWords(els.inputText.value);
         els.splitInputCount.textContent = 'Words: ' + countWords(els.splitInput.value);
-        // Output count (Fix 2)
         els.outputCount.textContent = 'Words: ' + countWords(els.outputText.innerText);
     }
 
@@ -125,16 +115,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let rawText = els.inputText.value;
         if (!rawText) return showNotification("Chưa có nội dung!", "error");
 
-        // Fix 3: Trim Logic when clicking Replace
+        // Free Limit: Trim logic
         if (!isVipUser) {
             const wc = countWords(rawText);
             if (wc > 2000) {
                 showNotification("Free: Cắt xuống 2000 từ!", "warning");
-                // Correct word trimming logic
+                // Correct split/slice/join to ensure word count is exact
                 const words = rawText.trim().split(/\s+/);
                 rawText = words.slice(0, 2000).join(" ");
                 els.inputText.value = rawText; 
-                updateCounters();
             }
         }
 
@@ -144,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             processed = processed.replace(/\n\s*\n\s*\n+/g, '\n').split(/\r?\n/).filter(l=>l.trim()).join('\n\n');
 
             let cRep = 0, cCaps = 0;
+            // Free Limit: Pairs
             let pairs = mode.pairs || [];
             if (!isVipUser && pairs.length > 10) pairs = pairs.slice(0, 10);
 
@@ -190,8 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
             els.outputText.innerHTML = html;
             els.replaceCountBadge.textContent = `Replace: ${cRep}`;
             els.capsCountBadge.textContent = `Auto-Caps: ${cCaps}`;
-            updateCounters(); // Update output counter
-            saveTempInput();
+            updateCounters();
+            els.inputText.value = ''; saveTempInput();
             showNotification("Hoàn tất!");
         }, 10);
     }
@@ -202,16 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!rawText.trim()) return showNotification('Chưa có nội dung!', 'error');
 
         let workingText = rawText;
-        // Fix 4: Trim Logic for Split
         if (!isVipUser) {
             const wc = countWords(rawText);
             if (wc > 10000) {
                 showNotification("Free: Cắt xuống 10,000 từ!", "warning");
                 const words = rawText.trim().split(/\s+/);
-                // Correct logic: Take exact 10000 words
                 workingText = words.slice(0, 10000).join(" ");
-                // Update textarea visual only? No, keep it as is or update:
-                // els.splitInput.value = workingText; // Optional: Update input
             }
         }
 
@@ -268,11 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 showNotification("Chia xong!");
             }
-            saveTempInput();
+            els.splitInput.value = ''; saveTempInput();
         }, 10);
     }
 
-    // Render Helpers
     function renderSplitPlaceholders(count) {
         els.splitWrapper.innerHTML = '';
         for(let i=1; i<=count; i++) {
@@ -300,10 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. SETTINGS & PAIRS
+    // 6. UI & EVENTS
     function addPairToUI(find='', replace='', append=false) {
-        // Fix 1: Silent load (Don't alert during initial load)
-        // Check performed inside loadSettings loop or manual click
+        if (!isVipUser && els.list.children.length >= 10) {
+            return alert("Bản Free giới hạn 10 cặp! Nâng cấp VIP để mở khóa.");
+        }
         const item = document.createElement('div'); item.className = 'punctuation-item';
         item.innerHTML = `<span class="pair-index">#</span><input type="text" class="find" placeholder="Tìm" value="${find}"><input type="text" class="replace" placeholder="Thay thế" value="${replace}"><button class="remove" tabindex="-1">×</button>`;
         item.querySelector('.remove').onclick = () => { item.remove(); updatePairIndexes(); checkEmpty(); savePairs(true); };
@@ -323,9 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadSettings() {
         els.list.innerHTML = '';
         const pairs = state.modes[state.currentMode].pairs || [];
-        // Fix 1: Silent Slice for Free
         const pairsToLoad = (!isVipUser && pairs.length > 10) ? pairs.slice(0, 10) : pairs;
-        
         pairsToLoad.forEach(p=>addPairToUI(p.find, p.replace, true));
         
         const m = state.modes[state.currentMode];
@@ -334,39 +318,31 @@ document.addEventListener('DOMContentLoaded', () => {
         els.autoCapsBtn.textContent=`Auto Caps: ${m.autoCaps?'BẬT':'Tắt'}`; els.autoCapsBtn.classList.toggle('active', m.autoCaps);
         els.capsExceptionInput.value = m.exceptions || ''; 
     }
-
-    // CSV Logic
-    function importCSV(file) {
-        if(!isVipUser) return showNotification("VIP Only!", "error");
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target.result; const lines = text.split(/\r?\n/);
-            // Basic CSV logic placeholder
-            showNotification("Đã nhập CSV!");
-        };
-        reader.readAsText(file);
-    }
-
-    // 7. EVENT LISTENERS
     function switchTab(tabId) {
         document.querySelectorAll('.tab-button').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === tabId));
         state.activeTab = tabId; saveState();
     }
+
+    // Attach Events
     document.querySelectorAll('.tab-button').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
-
-    // Manual Add Button (Active Alert here)
-    document.getElementById('add-pair').onclick = () => {
-        if (!isVipUser && els.list.children.length >= 10) {
-            return alert("Bản Free giới hạn 10 cặp! Nâng cấp VIP để mở khóa.");
-        }
-        addPairToUI();
-    };
-
+    
+    // Free Mode Limits on Actions
     els.addModeBtn.onclick = () => { if (!isVipUser) return showNotification("Free: Không được thêm Mode!", "error"); /* Logic */ };
     els.copyModeBtn.onclick = () => { if (!isVipUser) return showNotification("Free: Không được sao chép Mode!", "error"); /* Logic */ };
-    els.renameBtn.onclick = () => { if (!isVipUser) return showNotification("Free: Không được đổi tên!", "error"); /* Logic */ };
-    els.deleteBtn.onclick = () => { if (state.currentMode==='default') return showNotification("Không xóa Default!", "error"); if(confirm('Xóa?')) { delete state.modes[state.currentMode]; state.currentMode='default'; saveState(); renderModeSelect(); loadSettings(); } };
+    els.renameBtn.onclick = () => {
+        // Free can rename current default mode
+        const n = prompt('Tên mới:', state.currentMode);
+        if(n && n !== state.currentMode && !state.modes[n]) { state.modes[n] = state.modes[state.currentMode]; delete state.modes[state.currentMode]; state.currentMode = n; saveState(); renderModeSelect(); }
+    };
+    els.deleteBtn.onclick = () => {
+        // Free: Reset pairs instead of deleting mode if default
+        if(state.currentMode === 'default' || Object.keys(state.modes).length === 1) {
+            if(confirm('Xóa hết các cặp trong chế độ này?')) { state.modes[state.currentMode].pairs = []; loadSettings(); saveState(); }
+        } else {
+            if(confirm('Xóa?')) { delete state.modes[state.currentMode]; state.currentMode = Object.keys(state.modes)[0]; saveState(); renderModeSelect(); loadSettings(); }
+        }
+    };
 
     const toggle = (p) => { state.modes[state.currentMode][p] = !state.modes[state.currentMode][p]; saveState(); loadSettings(); };
     els.matchCaseBtn.onclick = () => toggle('matchCase');
@@ -375,16 +351,28 @@ document.addEventListener('DOMContentLoaded', () => {
     els.saveExceptionBtn.onclick = () => { state.modes[state.currentMode].exceptions = els.capsExceptionInput.value; saveState(); showNotification('Đã lưu!'); };
 
     els.modeSelect.onchange = (e) => { state.currentMode = e.target.value; saveState(); loadSettings(); };
+    document.getElementById('add-pair').onclick = () => addPairToUI();
     document.getElementById('save-settings').onclick = () => savePairs();
     els.replaceBtn.onclick = performReplaceAll;
     document.getElementById('copy-button').onclick = () => { if(els.outputText.innerText) { navigator.clipboard.writeText(els.outputText.innerText).then(() => showNotification('Đã copy!')); }};
-    els.exportBtn.onclick = () => { if(isVipUser) showNotification("Export OK"); else showNotification("VIP Only!", "error"); };
-    els.importBtn.onclick = () => { if(isVipUser) { const inp=document.createElement('input'); inp.type='file'; inp.click(); } else showNotification("VIP Only!", "error"); };
-
-    els.splitActionBtn.onclick = performSplit;
-    els.clearSplitRegexBtn.onclick = () => { els.splitWrapper.innerHTML = ''; showNotification('Đã xóa!'); };
     
-    // Split Mode Click
+    // CSV Logic
+    els.exportBtn.onclick = () => { if(isVipUser) showNotification("Export OK"); else showNotification("VIP Only!", "error"); };
+    els.importBtn.onclick = () => { 
+        if(!isVipUser) return showNotification("VIP Only!", "error"); 
+        const inp=document.createElement('input'); inp.type='file'; inp.accept='.csv'; inp.click(); 
+    };
+
+    // Split UI Toggle
+    els.splitTypeRadios.forEach(r => r.addEventListener('change', e => {
+        if(e.target.value === 'regex' && !isVipUser) { showNotification("VIP Only!", "error"); els.splitTypeRadios[0].checked = true; return; }
+        document.getElementById('split-type-count').classList.toggle('hidden', e.target.value!=='count');
+        document.getElementById('split-type-regex').classList.toggle('hidden', e.target.value!=='regex');
+        
+        // Hide/Show Output based on mode
+        if(e.target.value === 'regex') els.splitWrapper.innerHTML = '';
+        else renderSplitPlaceholders(currentSplitMode);
+    }));
     document.querySelectorAll('.split-mode-btn').forEach(b => b.onclick = () => {
         const val = parseInt(b.dataset.split);
         if(!isVipUser && val>4) return;
@@ -392,23 +380,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.split-mode-btn').forEach(btn=>btn.classList.remove('active')); b.classList.add('active');
         renderSplitPlaceholders(val);
     });
-    
-    // Split Radio
-    els.splitTypeRadios.forEach(r => r.addEventListener('change', e => {
-        if(e.target.value === 'regex' && !isVipUser) { showNotification("VIP Only!", "error"); els.splitTypeRadios[0].checked = true; return; }
-        document.getElementById('split-type-count').classList.toggle('hidden', e.target.value!=='count');
-        document.getElementById('split-type-regex').classList.toggle('hidden', e.target.value!=='regex');
-    }));
 
-    // Real-time counters
     [els.inputText, els.splitInput].forEach(el => el.addEventListener('input', () => { updateCounters(); debounceSave(); }));
 
-    // Modal Fix (Check existence)
+    // Safe Modal Binding
     if(els.buyKeyBtn) els.buyKeyBtn.onclick = () => els.modal.classList.add('active');
     if(els.closeModal) els.closeModal.onclick = () => els.modal.classList.remove('active');
     if(els.modal) window.onclick = (e) => { if(e.target == els.modal) els.modal.classList.remove('active'); };
 
-    // INIT LOADER
+    // STARTUP
     function renderModeSelect() {
         els.modeSelect.innerHTML = '';
         Object.keys(state.modes).sort().forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; els.modeSelect.appendChild(o); });
