@@ -62,7 +62,7 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 }
 .btn:active { transform: scale(0.98); }
 
-/* Standard Colors */
+/* Basic Colors */
 .btn-primary { background: #2563eb; color: white; }
 .btn-primary:hover { background: #1d4ed8; }
 .btn-success { background: #10b981; color: white; }
@@ -83,20 +83,20 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .btn-modern-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
 .btn-modern-purple:hover { background: #e9d5ff; }
 
-/* Action Buttons Colors */
+/* Action Buttons Colors (Yêu cầu 5) */
 .btn-action-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .btn-action-green:hover { background: #a7f3d0; }
 .btn-action-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
 .btn-action-blue:hover { background: #bfdbfe; }
 
-/* TOGGLE BUTTON - OLD STYLE RESTORED */
+/* TOGGLE BUTTON - OLD STYLE RESTORED (Yêu cầu 3) */
 .btn-toggle {
     background: #e5e7eb; color: #6b7280; 
     justify-content: flex-start; min-width: 140px;
-    border: 1px solid #d1d5db; /* Viền nhẹ */
+    border: 1px solid #d1d5db;
 }
 .btn-toggle.active {
-    background: #2563eb; color: white; /* Xanh đậm chữ trắng */
+    background: #2563eb; color: white;
     border-color: #1d4ed8;
 }
 
@@ -105,7 +105,7 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .icon-btn { min-width: 120px; }
 .input-with-btn { display: flex; gap: 5px; align-items: center; width: 100%; }
 
-/* BADGES */
+/* BADGES & COUNTERS */
 .badge { background: #1abc9c; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
 .badge-yellow { background: #f59e0b; color: white; }
 .badge-blue { background: #3b82f6; color: white; }
