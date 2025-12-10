@@ -1,41 +1,27 @@
-// === CẤU HÌNH TELEGRAM BOT (Đã điền sẵn thông tin bạn cung cấp) ===
+// === CẤU HÌNH TELEGRAM ===
 const TG_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
-const TG_CHAT_ID = "5524168349"; 
-// =============================
+const TG_ADMIN_ID = "5524168349"; // ID Admin (Nhận VIP login, Warning)
+const TG_CHANNEL_ID = "-1003206251077"; // Kênh Chat (Nhận Free login) -> Lưu ý thêm -100 cho Channel ID
+// =========================
 
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // --- HÀM GỬI TELEGRAM (Nâng cấp) ---
-  async function sendTelegram(msg) {
-      // Bỏ qua nếu thiếu Token
-      if(!TG_BOT_TOKEN || !TG_CHAT_ID) return;
-      
+  // --- HELPER: SEND TELEGRAM ---
+  async function sendTelegram(targetId, msg) {
+      if(!TG_BOT_TOKEN) return;
       const tgUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
-      
-      const payload = {
-          chat_id: TG_CHAT_ID,
-          text: msg,
-          parse_mode: "HTML" // Để in đậm, in nghiêng đẹp hơn
-      };
-
       try {
-          const resp = await fetch(tgUrl, {
+          await fetch(tgUrl, {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify(payload)
+              body: JSON.stringify({ chat_id: targetId, text: msg, parse_mode: "HTML" })
           });
-          // Debug log (xem trong Cloudflare Dashboard > Logs nếu cần)
-          if (!resp.ok) {
-              console.log("Telegram Error:", await resp.text());
-          }
-      } catch (e) {
-          console.log("Telegram Fetch Error:", e);
-      }
+      } catch(e) {}
   }
 
-  // 1. API HEARTBEAT
+  // --- HEARTBEAT ---
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
@@ -43,33 +29,46 @@ export async function onRequest(context) {
       if(!keyVal) return new Response("Invalid", {status: 401});
       try {
           const d = JSON.parse(keyVal);
-          if(d.expires_at && Date.now() > d.expires_at) return new Response("Expired", {status: 401});
+          if(d.expires_at && Date.now() > d.expires_at) {
+              // Gửi cảnh báo hết hạn cho Admin (Yêu cầu 3)
+              const msg = `⚠️ <b>KEY EXPIRED!</b>\nKey: ${userKey}\nNote: ${d.note}`;
+              context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+              return new Response("Expired", {status: 401});
+          }
           return new Response("OK", {status: 200});
-      } catch(e) { return new Response("Data Error", {status: 401}); }
+      } catch(e) { return new Response("Error", {status: 401}); }
   }
 
-  // 2. XỬ LÝ ĐĂNG NHẬP (Gửi Bot ở đây)
+  // --- LOGOUT ---
+  if (url.pathname === "/logout") {
+      const userKey = getCookie(request, "auth_vip");
+      if(userKey) {
+          const ip = request.headers.get("CF-Connecting-IP");
+          const ua = request.headers.get("User-Agent");
+          // Gửi thông báo Logout cho Admin (Yêu cầu 3)
+          const msg = `🚪 <b>LOGOUT REPORT</b>\nKey: <code>${userKey}</code>\nIP: ${ip}\nTime: ${new Date().toLocaleString('vi-VN')}\nUA: ${ua}`;
+          context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+      }
+      return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
+  }
+
+  // --- LOGIN PROCESS ---
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.formData();
         const inputKey = (formData.get("secret_key") || "").trim();
         const deviceId = (formData.get("device_id") || "unknown").trim();
-        // Lấy IP thật của người dùng qua Header của Cloudflare
-        const ip = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
-        const userAgent = request.headers.get("User-Agent") || "unknown";
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const ua = request.headers.get("User-Agent") || "unknown";
 
         if (!inputKey) return new Response(renderLoginPage("Vui lòng nhập Key!"), {headers:{"Content-Type":"text/html"}});
 
-        // Lấy Key từ KV
         const keyVal = await env.PRO_1.get(inputKey);
         if (!keyVal) return new Response(renderLoginPage("Key không tồn tại!"), {headers:{"Content-Type":"text/html"}});
 
         let keyData;
-        try {
-            keyData = JSON.parse(keyVal);
-        } catch(e) {
-            return new Response(renderLoginPage("Lỗi dữ liệu Key (JSON Error)! Liên hệ Admin."), {headers:{"Content-Type":"text/html"}});
-        }
+        try { keyData = JSON.parse(keyVal); } 
+        catch(e) { return new Response(renderLoginPage("Lỗi dữ liệu Key!"), {headers:{"Content-Type":"text/html"}}); }
 
         // Logic Kích hoạt
         if (!keyData.activated_at) {
@@ -80,57 +79,71 @@ export async function onRequest(context) {
             keyData.devices = [];
         } 
         else if (keyData.expires_at && Date.now() > keyData.expires_at) {
+             // Thông báo Key hết hạn khi cố đăng nhập
+             const msg = `❌ <b>LOGIN FAILED (EXPIRED)</b>\nKey: ${inputKey}\nNote: ${keyData.note}`;
+             context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
              return new Response(renderLoginPage("Key đã hết hạn!"), {headers:{"Content-Type":"text/html"}});
         }
 
         // Logic Check Device
-        const maxDev = keyData.max_devices || 2;
+        const maxDev = keyData.max_devices || 1;
         let devices = keyData.devices || [];
+        const existingDev = devices.find(d => d.id === deviceId);
         
-        if (!devices.includes(deviceId)) {
+        if (!existingDev) {
             if (devices.length >= maxDev) {
-                return new Response(renderLoginPage(`Key đã đạt giới hạn ${maxDev} thiết bị!`), {headers:{"Content-Type":"text/html"}});
+                // WARN: Quá giới hạn thiết bị
+                const msg = `🚫 <b>LIMIT BREACH!</b>\nKey: <code>${inputKey}</code> (Max ${maxDev})\nAttempt IP: ${ip}\nAttempt Dev: ${deviceId}\nExisting: ${devices.map(d=>d.ip).join(', ')}`;
+                context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+                
+                return new Response(renderLoginPage(`Lỗi: Key này chỉ dùng cho ${maxDev} thiết bị! Đã có ${devices.length} thiết bị đang dùng.`), {headers:{"Content-Type":"text/html"}});
             }
-            devices.push(deviceId);
+            // Add new device
+            devices.push({ id: deviceId, ip: ip, ua: ua });
             keyData.devices = devices;
-            // Lưu lại vào KV
             await env.PRO_1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // --- GỬI THÔNG BÁO TELEGRAM ---
+        // --- NOTIFICATIONS ROUTING ---
         const timeStr = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
-        const expStr = new Date(keyData.expires_at).toLocaleDateString("vi-VN");
+        const devCount = `${keyData.devices.length}/${maxDev}`;
         
-        const msg = `
-🚀 <b>NEW LOGIN SUCCESS!</b>
-🔑 <b>Key:</b> <code>${inputKey}</code>
-📅 <b>Time:</b> ${timeStr}
-🌍 <b>IP:</b> <code>${ip}</code>
-📱 <b>Device ID:</b> <code>${deviceId}</code>
-⏳ <b>Hết hạn:</b> ${expStr}
-📝 <b>Ghi chú:</b> ${keyData.note || 'Không có'}
-🕵️ <b>User Agent:</b> ${userAgent.substring(0, 50)}...
+        if (inputKey.startsWith("FREE")) {
+            // Gửi vào KÊNH CHAT (Yêu cầu 2)
+            const msg = `
+🔑 <b>KEY: ${inputKey} đã được sử dụng!</b>
+📅 Time: ${timeStr}
+📱 Thiết bị: ${devCount}
+📝 Ghi chú: ${keyData.note}
+--------------------------
+<i>Vui lòng chọn KEY còn hiệu lực khác trong danh sách!</i>
 `;
-        // Sử dụng waitUntil để không làm chậm phản hồi của người dùng
-        context.waitUntil(sendTelegram(msg));
-        // ------------------------------
+            context.waitUntil(sendTelegram(TG_CHANNEL_ID, msg));
+        } else {
+            // Gửi cho ADMIN (VIP Login)
+            const msg = `
+🚀 <b>NEW LOGIN SUCCESS!</b>
+🔑 Key: <code>${inputKey}</code>
+📅 Time: ${timeStr}
+🌍 IP: <code>${ip}</code>
+📱 Device: <code>${deviceId}</code> (${devCount})
+⏳ Exp: ${new Date(keyData.expires_at).toLocaleDateString("vi-VN")}
+📝 Note: ${keyData.note}
+`;
+            context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+        }
 
         return new Response(null, {
             status: 302,
-            headers: {
-                "Location": "/",
-                "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000`,
-            },
+            headers: { "Location": "/", "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000` },
         });
-    } catch (e) {
-        return new Response(renderLoginPage("Lỗi Server: " + e.message), {headers:{"Content-Type":"text/html"}});
-    }
+
+    } catch (e) { return new Response(renderLoginPage("Lỗi Server: " + e.message), {headers:{"Content-Type":"text/html"}}); }
   }
 
-  // Các route khác giữ nguyên
+  // Common Routes
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
-  if (url.pathname === "/logout") return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
-
+  
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
@@ -149,7 +162,6 @@ export async function onRequest(context) {
   return next();
 }
 
-// Các hàm phụ trợ (getCookie, renderLoginPage) giữ nguyên như file cũ
 function getCookie(req, name) {
     const c = req.headers.get("Cookie");
     if(!c) return null;
@@ -158,7 +170,7 @@ function getCookie(req, name) {
 }
 
 function renderLoginPage(errorMsg) {
-  // ... (Giữ nguyên nội dung HTML login page như bài trước) ...
+  // Return HTML login form (Keep same as before)
   return `
 <!DOCTYPE html>
 <html lang="vi">
