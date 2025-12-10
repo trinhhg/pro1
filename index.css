@@ -35,6 +35,7 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .btn-primary { background: #2563eb; color: white; } .btn-primary:hover { background: #1d4ed8; }
 .btn-success { background: #10b981; color: white; } .btn-success:hover { background: #059669; }
 .btn-warning { background: #f59e0b; color: white; } .btn-warning:hover { background: #d97706; }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
 
 /* Modern Flat Buttons */
 .btn-modern { border: 1px solid transparent; padding: 8px 15px; justify-content: center; }
@@ -81,9 +82,8 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 
 /* PAIRS LIST */
 .punctuation-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
-.pair-index { font-size: 11px; font-weight: 700; color: #9ca3af; width: 20px; text-align: center; }
+.pair-index { font-size: 11px; font-weight: 700; color: #9ca3af; width: 25px; text-align: right; margin-right: 5px; }
 .punctuation-item input { flex: 1; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; }
-/* Nút Xóa Đỏ */
 .punctuation-item button.remove { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer; transition: all 0.2s; }
 .punctuation-item button.remove:hover { background: #dc2626; color: white; border-color: #b91c1c; transform: scale(1.1); box-shadow: 0 2px 4px rgba(220,38,38,0.3); }
 
@@ -144,8 +144,6 @@ mark.hl-orange { background-color: #fdba74; color: #000; border-radius: 2px; pad
 .price-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center; color: #374151; }
 .price-card.team { border-color: #3b82f6; background: #eff6ff; }
 .price-title { font-weight: 800; font-size: 14px; margin-bottom: 5px; display: block; color: #111827; }
-.price-val { font-size: 13px; color: #374151; margin: 4px 0; }
-.price-note { font-size: 11px; color: #6b7280; font-style: italic; }
 .buy-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
 .btn-fb { background: #1877f2; color: white; width: 100%; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 13px; text-align: center; display: block; }
 .btn-tele { background: #0088cc; color: white; width: 100%; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 13px; text-align: center; display: block; }
