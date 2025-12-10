@@ -48,12 +48,9 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .btn-action-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; } .btn-action-green:hover { background: #a7f3d0; }
 .btn-action-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; } .btn-action-blue:hover { background: #bfdbfe; }
 
-/* TOGGLE BUTTONS (Style Phẳng Hiện Đại khi Active - Yêu cầu 7) */
-.btn-toggle { background: #e5e7eb; color: #6b7280; justify-content: flex-start; min-width: 140px; border: 1px solid #d1d5db; transition: all 0.2s; }
-.btn-toggle.active {
-    background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; /* Style phẳng giống btn-modern-primary */
-    font-weight: 700;
-}
+/* TOGGLE BUTTONS - OLD STYLE */
+.btn-toggle { background: #e5e7eb; color: #6b7280; justify-content: flex-start; min-width: 140px; border: 1px solid #d1d5db; }
+.btn-toggle.active { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; font-weight: 700; }
 
 .hidden { display: none !important; }
 .full-width { width: 100%; }
@@ -86,10 +83,9 @@ textarea, input, .output-div { font-family: 'Montserrat', sans-serif !important;
 .punctuation-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
 .pair-index { font-size: 11px; font-weight: 700; color: #9ca3af; width: 20px; text-align: center; }
 .punctuation-item input { flex: 1; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; }
-
-/* Nút Xóa (Yêu cầu 8) */
+/* Nút Xóa Đỏ */
 .punctuation-item button.remove { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer; transition: all 0.2s; }
-.punctuation-item button.remove:hover { background: #dc2626; color: white; border-color: #b91c1c; transform: scale(1.05); }
+.punctuation-item button.remove:hover { background: #dc2626; color: white; border-color: #b91c1c; transform: scale(1.1); box-shadow: 0 2px 4px rgba(220,38,38,0.3); }
 
 /* REPLACE PANE */
 #replace { height: calc(100vh - 100px); } 
