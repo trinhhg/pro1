@@ -48,6 +48,7 @@
                   <div style="font-style:italic; font-size:11px; margin-top:5px;">Max 15 thiết bị</div>
               </div>
           </div>
+          <p style="text-align:center; font-size:12px; color:#666; margin-top:0;">(Nếu team của bạn trên 15 thiết bị thì vui lòng liên hệ admin để tăng thiết bị và giữ nguyên giá)</p>
           <div class="buy-actions">
               <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn-fb">Liên hệ Facebook</a>
               <a href="https://t.me/trinhhg57" target="_blank" class="btn-tele">Liên hệ Telegram</a>
@@ -59,13 +60,13 @@
     <div id="settings" class="tab-content active">
       <div class="panel-container">
         <div class="panel-header">
-          <h2>Quản Lý Cặp Thay Thế</h2>
+          <h2>Quản Lý Cặp Thay Thế (Free)</h2>
           <div class="mode-actions">
              <div class="select-wrapper"><label>Chế độ:</label><select id="mode-select"></select></div>
              <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="add-mode" class="btn btn-modern btn-modern-primary locked-feature">+ Mới</button></div>
              <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="copy-mode" class="btn btn-modern btn-modern-secondary locked-feature">Sao Chép</button></div>
-             <button id="rename-mode" class="btn btn-modern btn-modern-warning">Đổi Tên</button>
-             <button id="delete-mode" class="btn btn-modern btn-modern-danger">Xóa</button>
+             <button id="rename-mode" class="btn btn-modern btn-modern-warning locked-feature" style="opacity:0.5;pointer-events:none;">Đổi Tên</button>
+             <button id="delete-mode" class="btn btn-modern btn-modern-danger">Xóa (Reset)</button>
           </div>
         </div>
         <div class="toolbar">
@@ -93,7 +94,7 @@
     <div id="replace" class="tab-content">
       <div class="split-pane">
         <div class="pane input-pane">
-          <div class="pane-header"><span>Văn bản gốc <span class="limit-label">(Max 2000 từ)</span></span><span id="input-word-count" class="badge">Words: 0</span></div>
+          <div class="pane-header"><span>Văn bản gốc <span class="limit-label">(Max 2000 từ)</span></span></div>
           <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
           <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
         </div>
@@ -125,11 +126,10 @@
                 <button class="split-mode-btn faded" data-split="10">10</button>
             </div>
         </div>
-        <div id="split-type-regex" class="split-sub-controls hidden"></div>
       </div>
       <div class="split-grid-container">
         <div id="split-input-container" class="split-box input-box">
-          <div class="split-header"><span>Văn bản gốc <span class="limit-label">(Max 10k từ)</span></span><span id="split-input-word-count" class="badge">Words: 0</span></div>
+          <div class="split-header"><span>Văn bản gốc <span class="limit-label">(Max 10k từ)</span></span></div>
           <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán cả bộ truyện vào đây..."></textarea>
           <div class="split-footer"><button id="split-action-btn" class="btn btn-primary full-width">Thực Hiện Chia</button></div>
         </div>
@@ -138,6 +138,6 @@
     </div>
   </main>
   <div id="notification-container"></div>
-  <script src="index.js"></script>
+  <script src="free.js"></script>
 </body>
 </html>
