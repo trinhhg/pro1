@@ -1,132 +1,190 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Tiện Ích Trịnh Hg - FREE</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css">
-  <script>window.IS_VIP = false;</script>
+    <meta charset="UTF-8">
+    <title>TrinhHG Admin Key Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: #f0f4f8; margin:0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; }
+        h1 { margin-top: 0; color: #1e3a8a; text-align: center; margin-bottom: 30px; }
+        
+        .section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+        .label { font-weight: 700; color: #475569; display: block; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Toggles Grid */
+        .toggle-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .toggle-btn {
+            padding: 10px 20px; border: 2px solid #cbd5e1; background: white; color: #64748b;
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;
+            min-width: 100px; text-align: center;
+        }
+        .toggle-btn:hover { background: #f1f5f9; }
+        .toggle-btn.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        
+        /* Custom Inputs */
+        input[type="text"], input[type="number"] { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 200px; font-size: 14px; }
+        
+        /* Output Area */
+        .output-row { display: flex; gap: 20px; margin-bottom: 10px; align-items: center; }
+        .output-row input { flex: 1; font-family: monospace; background: #f8fafc; color: #334155; }
+        .copy-btn { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .copy-btn:hover { background: #059669; }
+        
+        .gen-btn { background: #1e40af; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
+        .gen-btn:hover { background: #1e3a8a; }
+        
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-left">
-      <h1>Tiện Ích Của Trịnh Hg</h1>
-      <div class="donate-info">
-        <span class="donate-label">DON@TE:</span>
-        <span class="donate-details">MB BANK - TRINH THI XUAN HUONG - 0917678211</span>
-      </div>
-    </div>
-    <div class="header-center">
-      <nav class="tabs">
-        <button class="tab-button active" data-tab="settings">Cài Đặt</button>
-        <button class="tab-button" data-tab="replace">Thay Thế</button>
-        <button class="tab-button" data-tab="split">Chia Chương</button>
-      </nav>
-    </div>
-    <div class="header-right">
-       <button id="buy-key-btn" class="btn btn-warning btn-sm">Mua KEY</button>
-       <a href="/login" class="btn btn-primary btn-sm" style="text-decoration:none;">Kích hoạt</a>
-    </div>
-  </header>
-
-  <div id="buy-key-modal" class="modal-overlay">
-      <div class="modal-box">
-          <button class="modal-close">×</button>
-          <h2 style="text-align:center; margin-top:0;">Bảng Giá Key VIP</h2>
-          <div class="pricing-grid">
-              <div class="price-card"><span class="price-title">CÁ NHÂN</span><div>15k / 1 Tuần</div><div>40k / 1 Tháng</div><div class="price-note">Max 2 thiết bị</div></div>
-              <div class="price-card team"><span class="price-title">ĐỘI NHÓM</span><div>30k / 1 Tuần</div><div>80k / 1 Tháng</div><div class="price-note">Max 15 thiết bị</div></div>
-          </div>
-          <div class="buy-actions">
-              <a href="https://www.facebook.com/trinh.hg.57" target="_blank" class="btn-fb">Liên hệ Facebook</a>
-              <a href="https://t.me/trinhhg57" target="_blank" class="btn-tele">Liên hệ Telegram</a>
-          </div>
-      </div>
-  </div>
-
-  <main class="app-body">
-    <div id="settings" class="tab-content active">
-      <div class="panel-container">
-        <div class="panel-header">
-          <h2>Quản Lý Cặp Thay Thế</h2>
-          <div class="mode-actions">
-             <div class="select-wrapper"><label>Chế độ:</label><select id="mode-select"></select></div>
-             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="add-mode" class="btn btn-modern btn-modern-primary locked-feature">+ Mới</button></div>
-             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="copy-mode" class="btn btn-modern btn-modern-secondary locked-feature">Sao Chép</button></div>
-             <button id="rename-mode" class="btn btn-modern btn-modern-warning">Đổi Tên</button>
-             <button id="delete-mode" class="btn btn-modern btn-modern-danger">Xóa</button>
-          </div>
-        </div>
-        <div class="toolbar">
-          <div class="toolbar-group">
-            <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
-            <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
-            <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
-          </div>
-          <div class="toolbar-group">
-             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="import-settings" class="btn btn-modern btn-modern-purple locked-feature">Nhập CSV</button></div>
-             <div class="locked-wrapper"><div class="locked-overlay">VIP</div><button id="export-settings" class="btn btn-modern btn-modern-purple locked-feature">Xuất CSV</button></div>
-          </div>
-        </div>
-        <div class="advanced-settings">
-            <div class="setting-block"><label>Ngoại lệ Auto Caps:</label><div class="input-with-btn"><input type="text" id="caps-exception"><button id="save-exception-btn" class="btn btn-modern btn-modern-primary">Lưu</button></div></div>
-        </div>
-        <div class="list-actions">
-           <button id="add-pair" class="btn btn-action-green icon-btn">Thêm cặp mới</button>
-           <button id="save-settings" class="btn btn-action-blue icon-btn">Lưu tất cả</button>
-        </div>
-        <div class="scroll-area"><div id="punctuation-list"></div><div id="empty-state" class="hidden">Chưa có cặp thay thế nào.</div></div>
-      </div>
-    </div>
-
-    <div id="replace" class="tab-content">
-      <div class="split-pane">
-        <div class="pane input-pane">
-          <div class="pane-header"><span>Văn bản gốc <span class="limit-label">(Max 2000 từ)</span></span><span id="input-word-count" class="badge">Words: 0</span></div>
-          <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản cần xử lý vào đây..."></textarea>
-          <div class="pane-footer"><button id="replace-button" class="btn btn-primary full-width">THỰC HIỆN THAY THẾ</button></div>
-        </div>
-        <div class="pane output-pane">
-          <div class="pane-header"><span>Kết quả</span><div class="counters-group"><span id="count-replace" class="badge badge-yellow">Replace: 0</span><span id="count-caps" class="badge badge-blue">Auto-Caps: 0</span><span id="output-word-count" class="badge">Words: 0</span></div></div>
-          <div id="output-text" class="custom-scrollbar output-div" contenteditable="false" data-placeholder="..."></div>
-          <div class="pane-footer"><button id="copy-button" class="btn btn-success full-width">Sao chép văn bản</button></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="split" class="tab-content">
-      <div class="split-controls-wrapper">
-        <div class="split-mode-selector">
-            <label><input type="radio" name="split-type" value="count" checked> Chia theo số phần</label>
-            <div class="locked-wrapper"><div class="locked-overlay">VIP</div><label class="locked-feature"><input type="radio" name="split-type" value="regex" disabled> Chia theo Chương (Regex)</label></div>
-        </div>
-        <div id="split-type-count" class="split-sub-controls">
-            <label>Số phần:</label>
-            <div class="split-buttons-group">
-                <button class="split-mode-btn active" data-split="2">2</button>
-                <button class="split-mode-btn" data-split="3">3</button>
-                <button class="split-mode-btn" data-split="4">4</button>
-                <button class="split-mode-btn faded" data-split="5">5</button>
-                <button class="split-mode-btn faded" data-split="6">6</button>
-                <button class="split-mode-btn faded" data-split="7">7</button>
-                <button class="split-mode-btn faded" data-split="8">8</button>
-                <button class="split-mode-btn faded" data-split="9">9</button>
-                <button class="split-mode-btn faded" data-split="10">10</button>
+    <div class="container">
+        <h1>🛠️ ADMIN KEY GENERATOR</h1>
+        
+        <div class="section">
+            <span class="label">1. Loại Key</span>
+            <div class="toggle-group" id="grp-type">
+                <div class="toggle-btn active" onclick="sel('grp-type', this, 'VIP')">VIP</div>
+                <div class="toggle-btn" onclick="sel('grp-type', this, 'FREE')">FREE</div>
             </div>
         </div>
-        <div id="split-type-regex" class="split-sub-controls hidden"></div>
-      </div>
-      <div class="split-grid-container">
-        <div id="split-input-container" class="split-box input-box">
-          <div class="split-header"><span>Văn bản gốc <span class="limit-label">(Max 10k từ)</span></span><span id="split-input-word-count" class="badge">Words: 0</span></div>
-          <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán cả bộ truyện vào đây..."></textarea>
-          <div class="split-footer"><button id="split-action-btn" class="btn btn-primary full-width">Thực Hiện Chia</button></div>
+
+        <div class="section">
+            <span class="label">2. Đối Tượng (Thiết Bị)</span>
+            <div class="toggle-group" id="grp-cat">
+                <div class="toggle-btn active" onclick="sel('grp-cat', this, 2)">CÁ NHÂN (2)</div>
+                <div class="toggle-btn" onclick="sel('grp-cat', this, 15)">ĐỘI NHÓM (15)</div>
+                <div class="toggle-btn" onclick="sel('grp-cat', this, 'custom')">TÙY CHỈNH</div>
+            </div>
+            <div id="custom-device-input" class="hidden" style="margin-top:10px;">
+                <input type="number" id="inp-devices" placeholder="Số thiết bị..." value="1">
+            </div>
         </div>
-        <div id="split-outputs-wrapper" class="outputs-wrapper"></div>
-      </div>
+
+        <div class="section">
+            <span class="label">3. Thời Hạn</span>
+            <div class="toggle-group" id="grp-dur">
+                <div class="toggle-btn" onclick="sel('grp-dur', this, 5)">5 Ngày</div>
+                <div class="toggle-btn" onclick="sel('grp-dur', this, 7)">1 Tuần</div>
+                <div class="toggle-btn active" onclick="sel('grp-dur', this, 30)">1 Tháng</div>
+                <div class="toggle-btn" onclick="sel('grp-dur', this, 'custom')">Tùy Chỉnh</div>
+            </div>
+            <div id="custom-days-input" class="hidden" style="margin-top:10px;">
+                <input type="number" id="inp-days" placeholder="Số ngày..." value="1">
+            </div>
+        </div>
+
+        <div class="section">
+            <span class="label">4. Thông Tin & Số Lượng</span>
+            <div style="display:flex; gap:20px; align-items:flex-end;">
+                <div>
+                    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Ghi chú (Để trống tự sinh):</label>
+                    <input type="text" id="inp-note" placeholder="VD: KhachA..." style="width:300px;">
+                </div>
+                <div>
+                    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Số lượng Key:</label>
+                    <div class="toggle-group" id="grp-qty" style="margin-bottom:0;">
+                        <div class="toggle-btn active" onclick="sel('grp-qty', this, 1)">1</div>
+                        <div class="toggle-btn" onclick="sel('grp-qty', this, 5)">5</div>
+                        <div class="toggle-btn" onclick="sel('grp-qty', this, 10)">10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="gen-btn" onclick="generate()">TẠO KEY NGAY</button>
+
+        <div class="section" style="border:none; margin-top:30px;">
+            <div id="output-list"></div>
+        </div>
     </div>
-  </main>
-  <div id="notification-container"></div>
-  <script src="index.js"></script>
+
+    <script>
+        // State
+        let config = { type: 'VIP', cat: 2, dur: 30, qty: 1 };
+
+        function sel(grpId, el, val) {
+            document.querySelectorAll(`#${grpId} .toggle-btn`).forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            
+            if(grpId === 'grp-type') config.type = val;
+            if(grpId === 'grp-cat') {
+                config.cat = val;
+                document.getElementById('custom-device-input').classList.toggle('hidden', val !== 'custom');
+            }
+            if(grpId === 'grp-dur') {
+                config.dur = val;
+                document.getElementById('custom-days-input').classList.toggle('hidden', val !== 'custom');
+            }
+            if(grpId === 'grp-qty') config.qty = val;
+        }
+
+        function generate() {
+            const list = document.getElementById('output-list');
+            list.innerHTML = '';
+            
+            // Devices
+            let maxDev = config.cat;
+            if(maxDev === 'custom') maxDev = parseInt(document.getElementById('inp-devices').value) || 1;
+
+            // Duration
+            let days = config.dur;
+            if(days === 'custom') days = parseInt(document.getElementById('inp-days').value) || 1;
+            
+            // Note
+            let baseNote = document.getElementById('inp-note').value.trim();
+            if(!baseNote) {
+                // Auto gen note based on type
+                if(config.type === 'FREE') baseNote = "keyfree";
+                else if(maxDev === 2) baseNote = "canhan";
+                else if(maxDev === 15) baseNote = "doinhom";
+                else baseNote = "khachvip";
+            }
+
+            for(let i=0; i<config.qty; i++) {
+                // Key Prefix
+                const prefix = (config.type === 'FREE') ? 'FREE-' : 'VIP-';
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let rnd = '';
+                for(let j=0; j<8; j++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+                const key = prefix + rnd;
+
+                // JSON Value
+                const finalNote = (config.qty > 1) ? `${baseNote}${i+1}` : baseNote;
+                const data = {
+                    duration_seconds: days * 86400,
+                    max_devices: maxDev,
+                    activated_at: null,
+                    expires_at: null,
+                    devices: [],
+                    note: finalNote,
+                    type: config.type,
+                    created_at: new Date().toISOString()
+                };
+
+                // Render UI
+                const row = document.createElement('div');
+                row.style.marginBottom = "20px";
+                row.innerHTML = `
+                    <div class="output-row">
+                        <span style="width:50px; font-weight:bold;">KEY:</span>
+                        <input type="text" value="${key}" id="key-${i}" readonly>
+                        <button class="copy-btn" onclick="copy('key-${i}')">Copy</button>
+                    </div>
+                    <div class="output-row">
+                        <span style="width:50px; font-weight:bold;">VAL:</span>
+                        <input type="text" value='${JSON.stringify(data)}' id="val-${i}" readonly>
+                        <button class="copy-btn" onclick="copy('val-${i}')">Copy</button>
+                    </div>
+                `;
+                list.appendChild(row);
+            }
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+        }
+    </script>
 </body>
 </html>
