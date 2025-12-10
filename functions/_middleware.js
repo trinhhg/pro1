@@ -1,12 +1,13 @@
 // === CẤU HÌNH TELEGRAM BOT ===
-const TG_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
-const TG_ADMIN_ID = "5524168349"; 
+const TG_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI"; // Token Bot của bạn
+const TG_ADMIN_ID = "5524168349"; // Chat ID nhận thông báo (Của riêng bạn)
 // =============================
 
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
+  // Hàm gửi tin nhắn Telegram
   async function sendTelegram(msg) {
       if(!TG_BOT_TOKEN) return;
       const tgUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
@@ -16,99 +17,145 @@ export async function onRequest(context) {
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({ chat_id: TG_ADMIN_ID, text: msg, parse_mode: "HTML" })
           });
-      } catch(e) {}
+      } catch(e) {
+          console.error("Tele Error:", e);
+      }
   }
 
-  // HEARTBEAT
+  // --- API HEARTBEAT (Kiểm tra ngầm) ---
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
+      
       const keyVal = await env.PRO_1.get(userKey);
       if(!keyVal) return new Response("Invalid", {status: 401});
+      
       try {
           const d = JSON.parse(keyVal);
           if(d.expires_at && Date.now() > d.expires_at) {
-              const msg = `⚠️ <b>KEY EXPIRED!</b>\nKey: <code>${userKey}</code>\nNote: ${d.note}`;
+              // Thông báo hết hạn khi đang dùng
+              const msg = `⚠️ <b>KEY ĐÃ HẾT HẠN!</b>\nKey: <code>${userKey}</code>\nGhi chú: ${d.note}`;
               context.waitUntil(sendTelegram(msg));
               return new Response("Expired", {status: 401});
           }
           return new Response("OK", {status: 200});
-      } catch(e) { return new Response("Error", {status: 401}); }
+      } catch(e) { return new Response("Data Error", {status: 401}); }
   }
 
-  // LOGOUT
+  // --- ĐĂNG XUẤT ---
   if (url.pathname === "/logout") {
       const userKey = getCookie(request, "auth_vip");
       if(userKey) {
-          const ip = request.headers.get("CF-Connecting-IP") || "Unknown IP";
-          const ua = request.headers.get("User-Agent") || "Unknown UA";
-          const msg = `🚪 <b>LOGOUT REPORT</b>\nKey: <code>${userKey}</code>\nIP: ${ip}\nTime: ${new Date().toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})}\nUA: ${ua}`;
+          const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
+          const ua = request.headers.get("User-Agent") || "Unknown";
+          const time = new Date().toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
+          
+          const msg = `🚪 <b>BÁO CÁO ĐĂNG XUẤT</b>\nKey: <code>${userKey}</code>\nIP: ${ip}\nTime: ${time}\nUA: ${ua}`;
           context.waitUntil(sendTelegram(msg));
       }
-      return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
+      return new Response(null, { 
+          status: 302, 
+          headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } 
+      });
   }
 
-  // LOGIN
+  // --- XỬ LÝ ĐĂNG NHẬP (POST) ---
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.formData();
         const inputKey = (formData.get("secret_key") || "").trim();
         const deviceId = (formData.get("device_id") || "unknown").trim();
-        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
 
         if (!inputKey) return new Response(renderLoginPage("Vui lòng nhập Key!"), {headers:{"Content-Type":"text/html"}});
 
+        // Lấy dữ liệu từ KV
         const keyVal = await env.PRO_1.get(inputKey);
         if (!keyVal) return new Response(renderLoginPage("Key không tồn tại!"), {headers:{"Content-Type":"text/html"}});
 
         let keyData;
-        try { keyData = JSON.parse(keyVal); } 
-        catch(e) { return new Response(renderLoginPage("Lỗi dữ liệu Key!"), {headers:{"Content-Type":"text/html"}}); }
+        try { 
+            keyData = JSON.parse(keyVal); 
+        } catch(e) { 
+            return new Response(renderLoginPage("Lỗi dữ liệu Key (JSON)!"), {headers:{"Content-Type":"text/html"}}); 
+        }
 
-        // Logic Kích hoạt (Chỉ tính time khi activated_at là null)
+        // 1. Logic Kích hoạt (Tính giờ từ lúc này)
         if (!keyData.activated_at) {
             const now = Date.now();
             const dur = (keyData.duration_seconds || (30*86400)) * 1000;
             keyData.activated_at = now;
             keyData.expires_at = now + dur;
-            keyData.devices = [];
+            keyData.devices = []; // Reset devices khi kích hoạt mới
         } 
+        // 2. Kiểm tra hết hạn
         else if (keyData.expires_at && Date.now() > keyData.expires_at) {
-             const msg = `❌ <b>LOGIN FAILED (Hết Hạn)</b>\nKey: <code>${inputKey}</code>\nNote: ${keyData.note}`;
+             const msg = `❌ <b>ĐĂNG NHẬP THẤT BẠI (Hết hạn)</b>\nKey: <code>${inputKey}</code>\nGhi chú: ${keyData.note}`;
              context.waitUntil(sendTelegram(msg));
-             return new Response(renderLoginPage("Key đã hết hạn!"), {headers:{"Content-Type":"text/html"}});
+             return new Response(renderLoginPage("Key này đã hết hạn sử dụng!"), {headers:{"Content-Type":"text/html"}});
         }
 
-        // Check Devices
+        // 3. Kiểm tra thiết bị
         const maxDev = keyData.max_devices || 1;
         let devices = keyData.devices || [];
         const existingDev = devices.find(d => d.id === deviceId);
         
         if (!existingDev) {
+            // Nếu là thiết bị mới -> Check giới hạn
             if (devices.length >= maxDev) {
+                const msg = `🚫 <b>CẢNH BÁO: QUÁ GIỚI HẠN THIẾT BỊ</b>\nKey: <code>${inputKey}</code>\nIP chặn: ${ip}\nDevice ID: ${deviceId}`;
+                context.waitUntil(sendTelegram(msg));
                 return new Response(renderLoginPage(`Lỗi: Key này chỉ dùng cho ${maxDev} thiết bị! Đã có ${devices.length} thiết bị đang dùng.`), {headers:{"Content-Type":"text/html"}});
             }
+            // Thêm thiết bị mới
             devices.push({ id: deviceId, ip: ip });
             keyData.devices = devices;
+            // Lưu lại vào KV
             await env.PRO_1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // Thông báo Login
+        // 4. Tính toán hiển thị thông báo
         const timeStr = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
-        const devInfo = `${devices.length}/${maxDev}`;
-        const msg = `🚀 <b>NEW LOGIN SUCCESS!</b>\n🔑 Key: <code>${inputKey}</code>\n📅 Time: ${timeStr}\n🌍 IP: ${ip}\n📱 Device: ${deviceId} (${devInfo})\n⏳ Exp: ${new Date(keyData.expires_at).toLocaleDateString("vi-VN")}\n📝 Note: ${keyData.note}`;
+        const expStr = new Date(keyData.expires_at).toLocaleDateString("vi-VN");
+        const devCount = `${devices.length}/${maxDev}`;
+        
+        // Tính gói thời gian hiển thị
+        const durSec = keyData.duration_seconds;
+        let packageStr = `${durSec} giây`;
+        if (durSec >= 31536000) packageStr = `${Math.round(durSec/31536000)} năm`;
+        else if (durSec >= 2592000) packageStr = `${Math.round(durSec/2592000)} tháng`;
+        else if (durSec >= 604800) packageStr = `${Math.round(durSec/604800)} tuần`;
+        else if (durSec >= 86400) packageStr = `${Math.round(durSec/86400)} ngày`;
+        else if (durSec >= 3600) packageStr = `${Math.round(durSec/3600)} giờ`;
+
+        const msg = `
+🚀 <b>NEW LOGIN SUCCESS!</b>
+🔑 Key: <code>${inputKey}</code>
+📦 Gói: ${packageStr}
+📅 Time: ${timeStr}
+🌍 IP: <code>${ip}</code>
+📱 Device: <code>${deviceId}</code> (${devCount})
+⏳ Exp: ${expStr}
+📝 Note: ${keyData.note || 'Không có'}
+`;
         context.waitUntil(sendTelegram(msg));
 
+        // 5. Thành công -> Chuyển hướng
         return new Response(null, {
             status: 302,
-            headers: { "Location": "/", "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000` },
+            headers: { 
+                "Location": "/",
+                "Set-Cookie": `auth_vip=${inputKey}; Path=/; HttpOnly; Secure; Max-Age=31536000` // Cookie 1 năm
+            },
         });
 
-    } catch (e) { return new Response(renderLoginPage("Lỗi Server: " + e.message), {headers:{"Content-Type":"text/html"}}); }
+    } catch (e) {
+        return new Response(renderLoginPage("Lỗi Server: " + e.message), {headers:{"Content-Type":"text/html"}});
+    }
   }
 
+  // --- ROUTING GIAO DIỆN ---
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
-  if (url.pathname === "/logout") return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
 
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
@@ -118,16 +165,20 @@ export async function onRequest(context) {
           if (keyVal) {
               try {
                   const d = JSON.parse(keyVal);
+                  // Kiểm tra hạn lần nữa khi load trang
                   if (d.expires_at && Date.now() < d.expires_at) isVip = true;
               } catch(e) {}
           }
       }
+      // Serve file tương ứng
       const target = isVip ? "/vip.html" : "/index.html";
       return env.ASSETS.fetch(new URL(target, request.url));
   }
+
   return next();
 }
 
+// Helper lấy Cookie
 function getCookie(req, name) {
     const c = req.headers.get("Cookie");
     if(!c) return null;
@@ -135,6 +186,7 @@ function getCookie(req, name) {
     return m ? m[1] : null;
 }
 
+// Giao diện Login HTML
 function renderLoginPage(errorMsg) {
   return `
 <!DOCTYPE html>
@@ -162,6 +214,7 @@ function renderLoginPage(errorMsg) {
     .extra-info a { color: #2563eb; font-weight: 700; text-decoration: none; }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: 0; opacity: 1; } }
     
+    /* MODAL STYLES */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
     .modal-overlay.active { display: flex; }
     .modal-box { background: white; width: 450px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; animation: slideIn 0.3s ease-out; }
@@ -176,16 +229,18 @@ function renderLoginPage(errorMsg) {
   </style>
   <script>
     window.onload = function() {
+        // Tạo Device ID nếu chưa có
         let did = localStorage.getItem('trinh_hg_device_id');
         if(!did) { did = 'dev_'+Math.random().toString(36).substr(2); localStorage.setItem('trinh_hg_device_id', did); }
         document.getElementById('device-id-input').value = did;
         
+        // Modal Logic
         const modal = document.getElementById('buy-key-modal');
         const openBtn = document.getElementById('open-modal-btn');
         const closeBtn = document.querySelector('.modal-close');
         
-        openBtn.onclick = function(e) { e.preventDefault(); modal.classList.add('active'); };
-        closeBtn.onclick = function() { modal.classList.remove('active'); };
+        if(openBtn) openBtn.onclick = function(e) { e.preventDefault(); modal.classList.add('active'); };
+        if(closeBtn) closeBtn.onclick = function() { modal.classList.remove('active'); };
         window.onclick = function(e) { if(e.target == modal) modal.classList.remove('active'); };
     }
   </script>
