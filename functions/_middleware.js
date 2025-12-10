@@ -1,27 +1,25 @@
-// === CẤU HÌNH TELEGRAM ===
+// === CẤU HÌNH TELEGRAM BOT ===
 const TG_BOT_TOKEN = "8317998690:AAEJ51BLc6wp2gRAiTnM2qEyB4sXHYoN7lI";
-const TG_ADMIN_ID = "5524168349"; // ID Admin (Nhận VIP login, Warning)
-const TG_CHANNEL_ID = "-1003206251077"; // Kênh Chat (Nhận Free login) -> Lưu ý thêm -100 cho Channel ID
-// =========================
+const TG_ADMIN_ID = "5524168349"; 
+// =============================
 
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // --- HELPER: SEND TELEGRAM ---
-  async function sendTelegram(targetId, msg) {
+  async function sendTelegram(msg) {
       if(!TG_BOT_TOKEN) return;
       const tgUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
       try {
           await fetch(tgUrl, {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ chat_id: targetId, text: msg, parse_mode: "HTML" })
+              body: JSON.stringify({ chat_id: TG_ADMIN_ID, text: msg, parse_mode: "HTML" })
           });
       } catch(e) {}
   }
 
-  // --- HEARTBEAT ---
+  // HEARTBEAT
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
@@ -30,36 +28,33 @@ export async function onRequest(context) {
       try {
           const d = JSON.parse(keyVal);
           if(d.expires_at && Date.now() > d.expires_at) {
-              // Gửi cảnh báo hết hạn cho Admin (Yêu cầu 3)
-              const msg = `⚠️ <b>KEY EXPIRED!</b>\nKey: ${userKey}\nNote: ${d.note}`;
-              context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+              const msg = `⚠️ <b>KEY EXPIRED!</b>\nKey: <code>${userKey}</code>\nNote: ${d.note}`;
+              context.waitUntil(sendTelegram(msg));
               return new Response("Expired", {status: 401});
           }
           return new Response("OK", {status: 200});
       } catch(e) { return new Response("Error", {status: 401}); }
   }
 
-  // --- LOGOUT ---
+  // LOGOUT
   if (url.pathname === "/logout") {
       const userKey = getCookie(request, "auth_vip");
       if(userKey) {
-          const ip = request.headers.get("CF-Connecting-IP");
-          const ua = request.headers.get("User-Agent");
-          // Gửi thông báo Logout cho Admin (Yêu cầu 3)
-          const msg = `🚪 <b>LOGOUT REPORT</b>\nKey: <code>${userKey}</code>\nIP: ${ip}\nTime: ${new Date().toLocaleString('vi-VN')}\nUA: ${ua}`;
-          context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+          const ip = request.headers.get("CF-Connecting-IP") || "Unknown IP";
+          const ua = request.headers.get("User-Agent") || "Unknown UA";
+          const msg = `🚪 <b>LOGOUT REPORT</b>\nKey: <code>${userKey}</code>\nIP: ${ip}\nTime: ${new Date().toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})}\nUA: ${ua}`;
+          context.waitUntil(sendTelegram(msg));
       }
       return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
   }
 
-  // --- LOGIN PROCESS ---
+  // LOGIN
   if (url.pathname === "/login" && request.method === "POST") {
     try {
         const formData = await request.formData();
         const inputKey = (formData.get("secret_key") || "").trim();
         const deviceId = (formData.get("device_id") || "unknown").trim();
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-        const ua = request.headers.get("User-Agent") || "unknown";
 
         if (!inputKey) return new Response(renderLoginPage("Vui lòng nhập Key!"), {headers:{"Content-Type":"text/html"}});
 
@@ -70,7 +65,7 @@ export async function onRequest(context) {
         try { keyData = JSON.parse(keyVal); } 
         catch(e) { return new Response(renderLoginPage("Lỗi dữ liệu Key!"), {headers:{"Content-Type":"text/html"}}); }
 
-        // Logic Kích hoạt
+        // Logic Kích hoạt (Chỉ tính time khi activated_at là null)
         if (!keyData.activated_at) {
             const now = Date.now();
             const dur = (keyData.duration_seconds || (30*86400)) * 1000;
@@ -79,59 +74,30 @@ export async function onRequest(context) {
             keyData.devices = [];
         } 
         else if (keyData.expires_at && Date.now() > keyData.expires_at) {
-             // Thông báo Key hết hạn khi cố đăng nhập
-             const msg = `❌ <b>LOGIN FAILED (EXPIRED)</b>\nKey: ${inputKey}\nNote: ${keyData.note}`;
-             context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
+             const msg = `❌ <b>LOGIN FAILED (Hết Hạn)</b>\nKey: <code>${inputKey}</code>\nNote: ${keyData.note}`;
+             context.waitUntil(sendTelegram(msg));
              return new Response(renderLoginPage("Key đã hết hạn!"), {headers:{"Content-Type":"text/html"}});
         }
 
-        // Logic Check Device
+        // Check Devices
         const maxDev = keyData.max_devices || 1;
         let devices = keyData.devices || [];
         const existingDev = devices.find(d => d.id === deviceId);
         
         if (!existingDev) {
             if (devices.length >= maxDev) {
-                // WARN: Quá giới hạn thiết bị
-                const msg = `🚫 <b>LIMIT BREACH!</b>\nKey: <code>${inputKey}</code> (Max ${maxDev})\nAttempt IP: ${ip}\nAttempt Dev: ${deviceId}\nExisting: ${devices.map(d=>d.ip).join(', ')}`;
-                context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
-                
                 return new Response(renderLoginPage(`Lỗi: Key này chỉ dùng cho ${maxDev} thiết bị! Đã có ${devices.length} thiết bị đang dùng.`), {headers:{"Content-Type":"text/html"}});
             }
-            // Add new device
-            devices.push({ id: deviceId, ip: ip, ua: ua });
+            devices.push({ id: deviceId, ip: ip });
             keyData.devices = devices;
             await env.PRO_1.put(inputKey, JSON.stringify(keyData));
         }
 
-        // --- NOTIFICATIONS ROUTING ---
+        // Thông báo Login
         const timeStr = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
-        const devCount = `${keyData.devices.length}/${maxDev}`;
-        
-        if (inputKey.startsWith("FREE")) {
-            // Gửi vào KÊNH CHAT (Yêu cầu 2)
-            const msg = `
-🔑 <b>KEY: ${inputKey} đã được sử dụng!</b>
-📅 Time: ${timeStr}
-📱 Thiết bị: ${devCount}
-📝 Ghi chú: ${keyData.note}
---------------------------
-<i>Vui lòng chọn KEY còn hiệu lực khác trong danh sách!</i>
-`;
-            context.waitUntil(sendTelegram(TG_CHANNEL_ID, msg));
-        } else {
-            // Gửi cho ADMIN (VIP Login)
-            const msg = `
-🚀 <b>NEW LOGIN SUCCESS!</b>
-🔑 Key: <code>${inputKey}</code>
-📅 Time: ${timeStr}
-🌍 IP: <code>${ip}</code>
-📱 Device: <code>${deviceId}</code> (${devCount})
-⏳ Exp: ${new Date(keyData.expires_at).toLocaleDateString("vi-VN")}
-📝 Note: ${keyData.note}
-`;
-            context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
-        }
+        const devInfo = `${devices.length}/${maxDev}`;
+        const msg = `🚀 <b>NEW LOGIN SUCCESS!</b>\n🔑 Key: <code>${inputKey}</code>\n📅 Time: ${timeStr}\n🌍 IP: ${ip}\n📱 Device: ${deviceId} (${devInfo})\n⏳ Exp: ${new Date(keyData.expires_at).toLocaleDateString("vi-VN")}\n📝 Note: ${keyData.note}`;
+        context.waitUntil(sendTelegram(msg));
 
         return new Response(null, {
             status: 302,
@@ -141,9 +107,9 @@ export async function onRequest(context) {
     } catch (e) { return new Response(renderLoginPage("Lỗi Server: " + e.message), {headers:{"Content-Type":"text/html"}}); }
   }
 
-  // Common Routes
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
-  
+  if (url.pathname === "/logout") return new Response(null, { status: 302, headers: { "Location": "/", "Set-Cookie": `auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0` } });
+
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
@@ -170,7 +136,6 @@ function getCookie(req, name) {
 }
 
 function renderLoginPage(errorMsg) {
-  // Return HTML login form (Keep same as before)
   return `
 <!DOCTYPE html>
 <html lang="vi">
