@@ -2,11 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     // 1. CONFIG & MIGRATION
     // =========================================================================
-    const CURRENT_VERSION = '2025.12.10.01';
-    const STORAGE_KEY = 'trinh_hg_settings_free_v2'; // Key riêng cho bản Free
+    const CURRENT_VERSION = '2025.12.11.01';
+    const STORAGE_KEY = 'trinh_hg_settings_free_v2'; 
     const INPUT_STATE_KEY = 'trinh_hg_input_free_v2';
     
-    // Markers (Copy from VIP)
+    // Markers
     const MARK_REP_START  = '\uE000'; const MARK_REP_END    = '\uE001';
     const MARK_CAP_START  = '\uE002'; const MARK_CAP_END    = '\uE003';
     const MARK_BOTH_START = '\uE004'; const MARK_BOTH_END   = '\uE005';
@@ -36,30 +36,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let state;
     
-    // MIGRATION LOGIC: Check VIP Key
-    // Nếu có key VIP cũ (storage VIP) mà người dùng đang ở bản Free (do hết hạn/logout)
-    // -> Ta chuyển 10 cặp đầu của mode VIP đang dùng sang Free.
+    // === NEW MIGRATION LOGIC (NO PAIRS COPIED) ===
     const vipData = localStorage.getItem('trinh_hg_settings_v21_final_fixed');
     if (vipData) {
         try {
             const parsedVip = JSON.parse(vipData);
             const activeVipMode = parsedVip.currentMode || 'default';
-            const vipPairs = parsedVip.modes[activeVipMode].pairs || [];
             
-            // Lấy 10 cặp đầu
-            const freePairs = vipPairs.slice(0, 10);
-            
+            // Tạo state mới cho Free
             state = JSON.parse(JSON.stringify(defaultState));
-            state.modes.default.pairs = freePairs;
-            state.modes.default.matchCase = parsedVip.modes[activeVipMode].matchCase;
-            state.modes.default.wholeWord = parsedVip.modes[activeVipMode].wholeWord;
-            state.modes.default.autoCaps = parsedVip.modes[activeVipMode].autoCaps;
-            state.modes.default.exceptions = parsedVip.modes[activeVipMode].exceptions;
             
-            // Xóa VIP data sau khi migrate (để tránh migrate lại nhiều lần)
-            // Hoặc giữ lại tùy chính sách, ở đây ta cứ lưu vào key Free
+            // Chỉ copy Settings, KHÔNG COPY PAIRS
+            if(parsedVip.modes && parsedVip.modes[activeVipMode]) {
+                const src = parsedVip.modes[activeVipMode];
+                state.modes.default.matchCase = src.matchCase;
+                state.modes.default.wholeWord = src.wholeWord;
+                state.modes.default.autoCaps = src.autoCaps;
+                state.modes.default.exceptions = src.exceptions;
+                state.modes.default.pairs = []; // Reset cặp về rỗng
+            }
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            localStorage.removeItem('trinh_hg_settings_v21_final_fixed'); // Cleanup VIP data
+            localStorage.removeItem('trinh_hg_settings_v21_final_fixed'); // Xóa data VIP cũ
         } catch(e) {
             state = defaultState;
         }
@@ -67,11 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState;
     }
 
-    // Reset 24h
-    if (state.timestamp && (Date.now() - state.timestamp > 24 * 3600 * 1000)) {
-        state = defaultState;
-    }
-    // Force structure
+    if (state.timestamp && (Date.now() - state.timestamp > 24 * 3600 * 1000)) state = defaultState;
     if(!state.modes || !state.modes.default) state = JSON.parse(JSON.stringify(defaultState));
     state.currentMode = 'default';
     state.timestamp = Date.now();
@@ -116,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.timestamp = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
     }
+    // Update logic lưu input: nếu rỗng thì lưu rỗng
     function saveTempInput() {
         const data = { inputText: els.inputText.value, splitInput: els.splitInput.value };
         localStorage.setItem(INPUT_STATE_KEY, JSON.stringify(data));
@@ -142,32 +137,41 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCounters() {
         els.outputCount.textContent = 'Words: ' + countWords(els.outputText.innerText);
     }
+    
+    // === NEW LIMIT HELPER ===
+    function enforceInputLimit(raw, mode) {
+        const limit = mode === 'replace' ? 2000 : 10000;
+        const words = raw.trim().split(/\s+/);
+        if (words.length > limit) {
+            return { value: words.slice(0, limit).join(" "), truncated: true };
+        }
+        return { value: raw, truncated: false };
+    }
 
     // =========================================================================
-    // CORE LOGIC (COPIED FROM VIP + LIMITS)
+    // CORE LOGIC
     // =========================================================================
 
     function performReplaceAll() {
-        let rawText = els.inputText.value;
-        if (!rawText) return showNotification("Chưa có nội dung!", "error");
+        let rawText = els.inputText.value || "";
+        if (!rawText.trim()) return showNotification("Chưa có nội dung!", "error");
 
-        // FREE LIMIT: 2000 Words
-        if (countWords(rawText) > 2000) {
-            showNotification("Bản Free: Giới hạn 2000 từ. Đã cắt bớt!", "warning");
-            const words = rawText.trim().split(/\s+/);
-            rawText = words.slice(0, 2000).join(" ");
-            els.inputText.value = rawText;
+        // 1. Enforce Limit & Update DOM
+        const { value, truncated } = enforceInputLimit(rawText, 'replace');
+        if (truncated) {
+            els.inputText.value = value; // Cập nhật ngay cho user thấy
+            showNotification("Bản Free: Đã tự động cắt xuống 2000 từ!", "warning");
         }
+        rawText = value;
 
         setTimeout(() => {
             const mode = state.modes.default;
             let processedText = normalizeText(rawText);
-            processedText = processedText.replace(/\n\s*\n\s*\n+/g, '\n').split(/\r?\n/).filter(line => line.trim() !== '').join('\n\n');
+            // Auto spacing logic
+            processedText = processedText.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0).join('\n\n');
 
             let countReplace = 0;
             let countCaps = 0;
-
-            // FREE LIMIT: Max 10 pairs applied
             const pairs = (mode.pairs || []).slice(0, 10);
 
             if (pairs.length > 0) {
@@ -180,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const pattern = escapeRegExp(rule.find);
                     const flags = mode.matchCase ? 'g' : 'gi';
                     const regex = mode.wholeWord ? new RegExp(`(?<![\\p{L}\\p{N}_])${pattern}(?![\\p{L}\\p{N}_])`, flags + 'u') : new RegExp(pattern, flags);
-                    
                     processedText = processedText.replace(regex, (match) => {
                         countReplace++;
                         let replacement = rule.replace;
@@ -193,13 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mode.autoCaps) {
                 const exceptionList = (mode.exceptions || "").split(',').map(s => s.trim().toLowerCase()).filter(s => s);
                 const autoCapsRegex = /(^|[.?!]\s+)(?:(\uE000)(.*?)(\uE001)|([^\s\uE000\uE001]+))/gmu;
-
                 processedText = processedText.replace(autoCapsRegex, (match, prefix, mStart, mContent, mEnd, rawWord) => {
                     let targetWord = mContent || rawWord;
                     if (!targetWord) return match;
                     if (exceptionList.includes(targetWord.toLowerCase())) return match;
                     let cappedWord = targetWord.charAt(0).toUpperCase() + targetWord.slice(1);
-                    
                     if (mStart) {
                         countCaps++;
                         return `${prefix}${MARK_BOTH_START}${cappedWord}${MARK_BOTH_END}`;
@@ -226,34 +227,50 @@ document.addEventListener('DOMContentLoaded', () => {
             els.replaceCountBadge.textContent = `Replace: ${countReplace}`;
             els.capsCountBadge.textContent = `Auto-Caps: ${countCaps}`;
             updateCounters();
-            saveTempInput();
+
+            // CLEAR INPUT AFTER PROCESS
+            els.inputText.value = "";
+            saveTempInput(); // Lưu trạng thái rỗng
+            
             showNotification("Hoàn tất!");
         }, 10);
     }
 
     function performSplit() {
-        let text = els.splitInput.value;
+        let text = els.splitInput.value || "";
         if(!text.trim()) return showNotification('Chưa có nội dung!', 'error');
 
-        // FREE LIMIT: 10k Words
-        if (countWords(text) > 10000) {
-            showNotification("Bản Free: Giới hạn 10.000 từ. Đã cắt bớt!", "warning");
-            const words = text.trim().split(/\s+/);
-            text = words.slice(0, 10000).join(" ");
+        // 1. Enforce Limit & Update DOM
+        const { value, truncated } = enforceInputLimit(text, 'split');
+        if (truncated) {
+            els.splitInput.value = value;
+            showNotification("Bản Free: Đã tự động cắt xuống 10.000 từ!", "warning");
         }
+        text = value;
 
         setTimeout(() => {
             const lines = normalizeText(text).split('\n');
             let chapterHeader = '', contentBody = normalizeText(text);
             if (/^(Chương|Chapter|Hồi)\s+\d+/.test(lines[0].trim())) { chapterHeader = lines[0].trim(); contentBody = lines.slice(1).join('\n'); }
-            const paragraphs = contentBody.split('\n').filter(p => p.trim());
-            const targetWords = Math.ceil(countWords(contentBody) / currentSplitMode);
+            
+            // Auto spacing logic before split
+            const paragraphs = contentBody.split(/\r?\n/).map(s=>s.trim()).filter(p => p.length > 0);
+            
+            const totalWords = paragraphs.reduce((acc, p) => acc + countWords(p), 0);
+            const targetWords = Math.ceil(totalWords / currentSplitMode);
+            
             let currentPart = [], currentCount = 0, rawParts = [];
             
             for (let p of paragraphs) {
                 const wCount = countWords(p);
-                if (currentCount + wCount > targetWords && rawParts.length < currentSplitMode - 1) { rawParts.push(currentPart.join('\n\n')); currentPart = [p]; currentCount = wCount; } 
-                else { currentPart.push(p); currentCount += wCount; }
+                if (currentCount + wCount > targetWords && rawParts.length < currentSplitMode - 1) { 
+                    rawParts.push(currentPart.join('\n\n')); 
+                    currentPart = [p]; 
+                    currentCount = wCount; 
+                } else { 
+                    currentPart.push(p); 
+                    currentCount += wCount; 
+                }
             }
             if (currentPart.length) rawParts.push(currentPart.join('\n\n'));
             
@@ -273,10 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             showNotification(`Đã chia xong!`);
+            
+            // CLEAR INPUT
+            els.splitInput.value = "";
             saveTempInput();
+
         }, 10);
     }
 
+    // (UI Functions keeping same but stripped for brevity, ensure renderModeSelect/addPairToUI/etc are present as previous)
     function renderSplitPlaceholders(count) {
         els.splitWrapper.innerHTML = '';
         for(let i=1; i<=count; i++) {
@@ -294,12 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // UI & EVENTS
-    function renderModeSelect() {
-        els.modeSelect.innerHTML = '<option value="default">default</option>';
-        updateModeUI();
-    }
+    function renderModeSelect() { els.modeSelect.innerHTML = '<option value="default">default</option>'; updateModeUI(); }
     function updateModeUI() {
         const mode = state.modes.default;
         const upd = (btn, act, txt) => { btn.textContent = `${txt}: ${act ? 'BẬT' : 'Tắt'}`; btn.classList.toggle('active', act); };
@@ -308,9 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         upd(els.autoCapsBtn, mode.autoCaps, 'Auto Caps');
         els.capsExceptionInput.value = mode.exceptions || '';
     }
-    
     function addPairToUI(find='', replace='', append=false) {
-        // FREE LIMIT: Max 10
         if (els.list.children.length >= 10) return alert("Bản Free giới hạn 10 cặp! Nâng cấp VIP để mở khóa.");
         const item = document.createElement('div'); item.className = 'punctuation-item';
         item.innerHTML = `<span class="pair-index">#</span><input type="text" class="find" placeholder="Tìm" value="${find.replace(/"/g, '&quot;')}"><input type="text" class="replace" placeholder="Thay thế" value="${replace.replace(/"/g, '&quot;')}"><button class="remove" tabindex="-1">×</button>`;
@@ -319,11 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (append) els.list.appendChild(item); else els.list.insertBefore(item, els.list.firstChild);
         updatePairIndexes(); checkEmpty();
     }
-    function updatePairIndexes() {
-        // Free không yêu cầu đánh số ngược, nhưng ta giữ cho đồng bộ
-        const items = Array.from(els.list.children);
-        items.forEach((item, index) => { item.querySelector('.pair-index').textContent = (items.length - index) + '.'; });
-    }
+    function updatePairIndexes() { Array.from(els.list.children).forEach((item, index) => { item.querySelector('.pair-index').textContent = (els.list.children.length - index) + '.'; }); }
     function checkEmpty() { els.emptyState.classList.toggle('hidden', els.list.children.length > 0); }
     function savePairs(silent) {
         state.modes.default.pairs = Array.from(els.list.children).map(i=>({find:i.querySelector('.find').value, replace:i.querySelector('.replace').value})).filter(p=>p.find);
@@ -341,42 +352,25 @@ document.addEventListener('DOMContentLoaded', () => {
         state.activeTab = tabId; saveState();
     }
 
-    // EVENT BINDING (RESTRICTED FOR FREE)
+    // EVENTS
     document.querySelectorAll('.tab-button').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
-    
-    // Limits
     els.addModeBtn.onclick = () => showNotification("Free: Chỉ dùng chế độ Default!", "error");
     els.copyModeBtn.onclick = () => showNotification("Free: Chức năng VIP!", "error");
     els.renameBtn.onclick = () => showNotification("Free: Chức năng VIP!", "error");
-    
-    // Free Delete = Reset Default
     els.deleteBtn.onclick = () => {
-        if(confirm('Bạn đang ở bản Free. Hành động này sẽ XÓA TẤT CẢ cặp thay thế hiện có. Tiếp tục?')) { 
-            state.modes.default.pairs = []; 
-            loadSettings(); saveState(); showNotification("Đã xóa sạch!");
-        }
+        if(confirm('Reset toàn bộ cặp Free?')) { state.modes.default.pairs = []; loadSettings(); saveState(); showNotification("Đã xóa sạch!"); }
     };
-    els.exportBtn.onclick = () => showNotification("Chức năng chỉ dành cho VIP!", "error");
-    els.importBtn.onclick = () => showNotification("Chức năng chỉ dành cho VIP!", "error");
-
+    els.exportBtn.onclick = els.importBtn.onclick = () => showNotification("Chức năng chỉ dành cho VIP!", "error");
     const toggle = (p) => { state.modes.default[p] = !state.modes.default[p]; saveState(); updateModeUI(); };
     els.matchCaseBtn.onclick = () => toggle('matchCase');
     els.wholeWordBtn.onclick = () => toggle('wholeWord');
     els.autoCapsBtn.onclick = () => toggle('autoCaps');
     els.saveExceptionBtn.onclick = () => { state.modes.default.exceptions = els.capsExceptionInput.value; saveState(); showNotification('Đã lưu!'); };
-    
     document.getElementById('add-pair').onclick = () => addPairToUI();
     document.getElementById('save-settings').onclick = () => savePairs();
     els.replaceBtn.onclick = performReplaceAll;
     document.getElementById('copy-button').onclick = () => { if(els.outputText.innerText) { navigator.clipboard.writeText(els.outputText.innerText).then(() => showNotification('Đã copy!')); }};
-
-    // Split UI (Regex blocked)
-    els.splitTypeRadios.forEach(r => r.addEventListener('change', e => {
-        if(e.target.value === 'regex') {
-            showNotification("Chức năng Regex dành cho VIP!", "error");
-            els.splitTypeRadios[0].checked = true; return;
-        }
-    }));
+    els.splitTypeRadios.forEach(r => r.addEventListener('change', e => { if(e.target.value === 'regex') { showNotification("Chức năng Regex dành cho VIP!", "error"); els.splitTypeRadios[0].checked = true; } }));
     document.querySelectorAll('.split-mode-btn').forEach(btn => {
         btn.onclick = () => { 
             const val = parseInt(btn.dataset.split);
@@ -387,15 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
     els.splitActionBtn.onclick = performSplit;
-
     [els.inputText, els.splitInput].forEach(el => el.addEventListener('input', () => { updateCounters(); debounceSave(); }));
-
-    // MODAL LOGIC
     els.buyKeyBtn.onclick = () => els.modal.classList.add('active');
     els.closeModal.onclick = () => els.modal.classList.remove('active');
     window.onclick = (e) => { if(e.target == els.modal) els.modal.classList.remove('active'); };
 
-    // INIT
     renderModeSelect(); loadSettings();
     const tmp = JSON.parse(localStorage.getItem(INPUT_STATE_KEY));
     if(tmp){ els.inputText.value=tmp.inputText||''; els.splitInput.value=tmp.splitInput||''; updateCounters(); }
