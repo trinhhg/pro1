@@ -28,7 +28,6 @@ export async function onRequest(context) {
   }
   function formatTime(ms) {
       const date = new Date(ms);
-      // Format: HH:mm DD/MM/YYYY
       return `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')} ${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
   }
   function formatPackage(sec) {
@@ -38,7 +37,7 @@ export async function onRequest(context) {
 
   // --- API VERSION CHECK ---
   if (url.pathname === "/api/version") {
-      return new Response("2025.12.11.01", {status: 200}); 
+      return new Response("2025.12.11.02", {status: 200}); 
   }
 
   // --- API ADMIN NOTIFY UPDATE ---
@@ -52,14 +51,12 @@ export async function onRequest(context) {
   }
 
   // --- API HEARTBEAT (QUAN TRỌNG: ĐÁ NGƯỜI DÙNG KHI ĐANG ONLINE) ---
-  // vip.js sẽ gọi cái này định kỳ. Nếu hết hạn -> Trả về 401 + Xóa Cookie.
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
       
       const keyVal = await env.PRO_1.get(userKey);
       if(!keyVal) {
-          // Key bị xóa khỏi hệ thống -> Đá ngay
           return new Response("Invalid Key", {
               status: 401,
               headers: { "Set-Cookie": "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0" }
@@ -68,7 +65,6 @@ export async function onRequest(context) {
       
       try {
           const d = JSON.parse(keyVal);
-          // Kiểm tra hết hạn
           if(d.expires_at && Date.now() > d.expires_at) {
               const msg = `
 ⚠️ <b>KEY HẾT HẠN!</b>
@@ -76,8 +72,6 @@ export async function onRequest(context) {
 ⏰ Ex: ${formatTime(d.activated_at)} - ${formatTime(d.expires_at)}
 `;
               context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
-              
-              // TRẢ VỀ 401 VÀ XÓA COOKIE NGAY LẬP TỨC
               return new Response("Expired", {
                   status: 401,
                   headers: { "Set-Cookie": "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0" }
@@ -181,20 +175,22 @@ export async function onRequest(context) {
     }
   }
 
-  // --- ROUTING GIAO DIỆN (ĐÁ NGƯỜI DÙNG KHI F5/TẢI TRANG) ---
+  // --- ROUTING GIAO DIỆN ---
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
 
+  // LOGIC CHỌN FILE HTML KHI VÀO TRANG CHỦ
+  // Dù URL là / hay /index.html hay /free.html hay /vip.html
+  // Middleware sẽ quyết định nội dung trả về là free.html hay vip.html dựa trên Cookie
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/free.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
-      let shouldClearCookie = false; // Cờ đánh dấu cần xóa cookie
+      let shouldClearCookie = false;
 
       if (userKey) {
           const keyVal = await env.PRO_1.get(userKey);
           if (keyVal) {
               try {
                   const d = JSON.parse(keyVal);
-                  // Kiểm tra hạn: Nếu còn hạn -> VIP. Nếu hết hạn -> Đánh dấu xóa cookie.
                   if (d.expires_at && Date.now() < d.expires_at) {
                       isVip = true;
                   } else {
@@ -202,21 +198,18 @@ export async function onRequest(context) {
                   }
               } catch(e) { shouldClearCookie = true; }
           } else {
-              // Có cookie nhưng key không tồn tại trong KV -> Xóa cookie
               shouldClearCookie = true;
           }
       }
 
-      // Chọn file HTML tương ứng
+      // CHỌN FILE ĐỂ SERVE
+      // Nếu là VIP -> lấy vip.html
+      // Nếu là Free -> lấy free.html (thay vì index.html vì bạn đã đổi tên)
       const target = isVip ? "/vip.html" : "/free.html";
       
-      // Lấy nội dung file từ Assets
       const response = await env.ASSETS.fetch(new URL(target, request.url));
-
-      // Tạo Response mới để có thể chỉnh sửa Header
       let newResponse = new Response(response.body, response);
 
-      // Nếu cần xóa cookie (do hết hạn hoặc lỗi), thêm Header xóa vào Response
       if (shouldClearCookie) {
           newResponse.headers.append("Set-Cookie", "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0");
       }
@@ -235,6 +228,7 @@ function getCookie(req, name) {
 }
 
 function renderLoginPage(errorMsg) {
+  // (Giữ nguyên phần HTML modal bảng giá như tin nhắn trước)
   return `
 <!DOCTYPE html>
 <html lang="vi">
