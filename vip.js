@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     // 1. CONFIGURATION & STATE
     // =========================================================================
-    const CURRENT_VERSION = '2025.12.11.01';
+    const CURRENT_VERSION = '2025.12.11.02';
     const STORAGE_KEY = 'trinh_hg_settings_v21_final_fixed';
     const INPUT_STATE_KEY = 'trinh_hg_input_state_v21';
   
@@ -26,13 +26,39 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSplitMode = 2;
     let saveTimeout;
 
+    // --- AUTO RELOAD & HEARTBEAT (QUAN TRỌNG: ĐÁ NGƯỜI DÙNG) ---
+    // 1. Reload sau 24h cứng
     setTimeout(() => location.reload(), 24 * 60 * 60 * 1000);
-    setInterval(checkForUpdate, 60 * 1000);
+
+    // 2. Check Version (Deploy mới)
+    setInterval(checkForUpdate, 60 * 1000); 
+
+    // 3. Check Heartbeat (Key hết hạn) - 30s check 1 lần
+    setInterval(checkHeartbeat, 30 * 1000);
+
     async function checkForUpdate() {
         try { const res = await fetch('/api/version'); if(res.ok) { const svVer = await res.text(); if(svVer && svVer.trim() !== CURRENT_VERSION) { showNotification("Update mới! Tải lại...", "warning"); setTimeout(() => location.reload(), 2000); } } } catch(e){}
     }
+
+    async function checkHeartbeat() {
+        try {
+            const res = await fetch('/api/heartbeat');
+            // Nếu server trả về 401 (Unauthorized) nghĩa là Key hết hạn hoặc bị xóa
+            if (res.status === 401) {
+                showNotification("⚠️ Key đã hết hạn! Đang chuyển về Free...", "error");
+                // Clear state tạm
+                localStorage.setItem(INPUT_STATE_KEY, "");
+                // Đợi 2s để user đọc thông báo rồi reload
+                setTimeout(() => {
+                    location.reload(); // Reload -> Middleware thấy mất cookie -> Serve Free
+                }, 2000);
+            }
+        } catch (e) {
+            // Lỗi mạng thì bỏ qua, đợi lần check sau
+        }
+    }
   
-    // DOM ELEMENTS (same as before)
+    // DOM ELEMENTS
     const els = {
       modeSelect: document.getElementById('mode-select'), list: document.getElementById('punctuation-list'),
       matchCaseBtn: document.getElementById('match-case'), wholeWordBtn: document.getElementById('whole-word'), autoCapsBtn: document.getElementById('auto-caps'), 
@@ -67,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function countWords(str) { return str.trim() ? str.trim().split(/\s+/).length : 0; }
     
-    // === MODIFIED SAVE TEMP (Allows clearing) ===
+    // SAVE TEMP (Allows clearing)
     function saveTempInput() { 
         localStorage.setItem(INPUT_STATE_KEY, JSON.stringify({ inputText: els.inputText.value, splitInput: els.splitInput.value })); 
     }
@@ -261,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // UI & EVENTS (Simplified standard functions)
+    // UI & EVENTS
     function renderModeSelect() {
       els.modeSelect.innerHTML = '';
       Object.keys(state.modes).sort().forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; els.modeSelect.appendChild(opt); });
