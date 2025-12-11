@@ -9,6 +9,7 @@ export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
+  // --- HELPERS ---
   async function sendTelegram(chatId, msg) {
       if(!TG_BOT_TOKEN) return;
       const tgUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
@@ -21,7 +22,6 @@ export async function onRequest(context) {
       } catch(e) { console.error("Tele Error:", e); }
   }
 
-  // --- HELPERS FORMATTING ---
   function getDeviceType(ua) {
       if (/Mobile|Android|iPhone|iPad/i.test(ua)) return "Mobile";
       return "Desktop";
@@ -51,24 +51,37 @@ export async function onRequest(context) {
       return new Response("Notification Sent!", {status: 200});
   }
 
-  // --- API HEARTBEAT (Kiểm tra Key ngầm) ---
+  // --- API HEARTBEAT (QUAN TRỌNG: ĐÁ NGƯỜI DÙNG KHI ĐANG ONLINE) ---
+  // vip.js sẽ gọi cái này định kỳ. Nếu hết hạn -> Trả về 401 + Xóa Cookie.
   if (url.pathname === "/api/heartbeat") {
       const userKey = getCookie(request, "auth_vip");
       if(!userKey) return new Response("No Key", {status: 401});
       
       const keyVal = await env.PRO_1.get(userKey);
-      if(!keyVal) return new Response("Invalid", {status: 401});
+      if(!keyVal) {
+          // Key bị xóa khỏi hệ thống -> Đá ngay
+          return new Response("Invalid Key", {
+              status: 401,
+              headers: { "Set-Cookie": "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0" }
+          });
+      }
       
       try {
           const d = JSON.parse(keyVal);
+          // Kiểm tra hết hạn
           if(d.expires_at && Date.now() > d.expires_at) {
               const msg = `
-⚠️ <b>KEY hết hạn!</b>
+⚠️ <b>KEY HẾT HẠN!</b>
 🔑 Key: <code>${userKey}</code>
 ⏰ Ex: ${formatTime(d.activated_at)} - ${formatTime(d.expires_at)}
 `;
               context.waitUntil(sendTelegram(TG_ADMIN_ID, msg));
-              return new Response("Expired", {status: 401});
+              
+              // TRẢ VỀ 401 VÀ XÓA COOKIE NGAY LẬP TỨC
+              return new Response("Expired", {
+                  status: 401,
+                  headers: { "Set-Cookie": "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0" }
+              });
           }
           return new Response("OK", {status: 200});
       } catch(e) { return new Response("Data Error", {status: 401}); }
@@ -80,7 +93,6 @@ export async function onRequest(context) {
       if(userKey) {
           const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
           const ua = request.headers.get("User-Agent") || "";
-          // Lấy thông tin gói để hiển thị (tùy chọn, cần query KV nếu muốn chính xác tuyệt đối, ở đây giả định lấy từ cache hoặc bỏ qua chi tiết gói khi logout để nhanh)
           const msg = `
 🚪 <b>BÁO CÁO ĐĂNG XUẤT</b>
 🔑 Key: <code>${userKey}</code>
@@ -169,23 +181,47 @@ export async function onRequest(context) {
     }
   }
 
-  // --- ROUTING GIAO DIỆN ---
+  // --- ROUTING GIAO DIỆN (ĐÁ NGƯỜI DÙNG KHI F5/TẢI TRANG) ---
   if (url.pathname === "/login") return new Response(renderLoginPage(null), {headers: {"Content-Type": "text/html; charset=utf-8"}});
 
   if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/free.html" || url.pathname === "/vip.html") {
       const userKey = getCookie(request, "auth_vip");
       let isVip = false;
+      let shouldClearCookie = false; // Cờ đánh dấu cần xóa cookie
+
       if (userKey) {
           const keyVal = await env.PRO_1.get(userKey);
           if (keyVal) {
               try {
                   const d = JSON.parse(keyVal);
-                  if (d.expires_at && Date.now() < d.expires_at) isVip = true;
-              } catch(e) {}
+                  // Kiểm tra hạn: Nếu còn hạn -> VIP. Nếu hết hạn -> Đánh dấu xóa cookie.
+                  if (d.expires_at && Date.now() < d.expires_at) {
+                      isVip = true;
+                  } else {
+                      shouldClearCookie = true;
+                  }
+              } catch(e) { shouldClearCookie = true; }
+          } else {
+              // Có cookie nhưng key không tồn tại trong KV -> Xóa cookie
+              shouldClearCookie = true;
           }
       }
+
+      // Chọn file HTML tương ứng
       const target = isVip ? "/vip.html" : "/free.html";
-      return env.ASSETS.fetch(new URL(target, request.url));
+      
+      // Lấy nội dung file từ Assets
+      const response = await env.ASSETS.fetch(new URL(target, request.url));
+
+      // Tạo Response mới để có thể chỉnh sửa Header
+      let newResponse = new Response(response.body, response);
+
+      // Nếu cần xóa cookie (do hết hạn hoặc lỗi), thêm Header xóa vào Response
+      if (shouldClearCookie) {
+          newResponse.headers.append("Set-Cookie", "auth_vip=; Path=/; HttpOnly; Secure; Max-Age=0");
+      }
+
+      return newResponse;
   }
 
   return next();
@@ -198,7 +234,6 @@ function getCookie(req, name) {
     return m ? m[1] : null;
 }
 
-// Added Modal HTML directly here as requested
 function renderLoginPage(errorMsg) {
   return `
 <!DOCTYPE html>
@@ -221,7 +256,6 @@ function renderLoginPage(errorMsg) {
     .btn-buy { background: #f59e0b; color: white; display:block; text-align:center; text-decoration:none; margin-top:10px; }
     .notification { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ef4444; font-size:13px; font-weight:600; }
     
-    /* MODAL STYLES */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
     .modal-overlay.active { display: flex; }
     .modal-box { background: white; width: 450px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; animation: slideIn 0.3s ease-out; }
@@ -241,11 +275,9 @@ function renderLoginPage(errorMsg) {
         if(!did) { did = 'dev_'+Math.random().toString(36).substr(2); localStorage.setItem('trinh_hg_device_id', did); }
         document.getElementById('device-id-input').value = did;
         
-        // Modal Logic
         const modal = document.getElementById('buy-key-modal');
         const openBtn = document.getElementById('open-modal-btn');
         const closeBtn = document.querySelector('.modal-close');
-        
         if(openBtn) openBtn.onclick = function(e) { e.preventDefault(); modal.classList.add('active'); };
         if(closeBtn) closeBtn.onclick = function() { modal.classList.remove('active'); };
         window.onclick = function(e) { if(e.target == modal) modal.classList.remove('active'); };
